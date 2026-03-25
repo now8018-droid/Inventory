@@ -130,9 +130,34 @@
           transform: none !important;
         }
       }
+
+      /* Force animation hook from NUI openInventory event */
+      #app.inv-open-animate > * {
+        animation: inv-panel-in 0.26s var(--inv-ease-out) both !important;
+      }
     </style>
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      (() => {
+        const app = document.getElementById("app");
+        if (!app) return;
+
+        window.addEventListener("message", (event) => {
+          const payload = event && event.data;
+          if (!payload || payload.event !== "openInventory") return;
+
+          app.classList.remove("inv-open-animate");
+          // force reflow so animation retriggers every open
+          void app.offsetWidth;
+          app.classList.add("inv-open-animate");
+
+          setTimeout(() => {
+            app.classList.remove("inv-open-animate");
+          }, 320);
+        });
+      })();
+    </script>
   </body>
 </html>
