@@ -28,21 +28,19 @@ end
 RegisterNetEvent("esx_inventoryhud:tradePlayerItem")
 AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType, itemName, count, tradeType)
     local src = source
+    if type(to) ~= "number" or to == src then return end
+    if type(itemType) ~= "string" or type(itemName) ~= "string" then return end
+
     local xTarget = ESX.GetPlayerFromId(to)
     if not xTarget then return end
-    
-    -- ตรวจสอบการโกง
-    if from and src ~= from then
-        print(('^1[ANTICHEAT] %s พยายามโกงการโอนไอเทม'):format(GetPlayerName(src)))
-        return
-    end
-    
+
     -- ตรวจสอบระยะทาง
     if #(GetEntityCoords(GetPlayerPed(src)) - GetEntityCoords(GetPlayerPed(to))) > TRADE_DISTANCE_LIMIT then
         return
     end
-    
-    count = ESX.Math.Round(count)
+
+    count = ESX.Math.Round(tonumber(count) or 0)
+    if count < 1 then return end
 
     if ProcessInventoryTransfer then
         ProcessInventoryTransfer(src, to, itemType, itemName, count)
