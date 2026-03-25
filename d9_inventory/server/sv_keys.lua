@@ -1,31 +1,59 @@
 ESX = exports["es_extended"]:getSharedObject()
 
--- ดึงข้อมูลกุญแจรถของผู้เล่น
-ESX.RegisterServerCallback(GetName("callback", "Vehicle"), function(source, cb)
+function GetOwnedVehiclesForPlayer(source, cb)
     local xPlayer = ESX.GetPlayerFromId(source)
-    
+    if not xPlayer then
+        cb({})
+        return
+    end
+
     MySQL.Async.fetchAll('SELECT plate, vehicle FROM owned_vehicles WHERE owner = @owner', {
         ['@owner'] = xPlayer.identifier
     }, function(result)
         local vehicles = {}
-        for i=1, #result do
-            local vehicleProps = json.decode(result[i].vehicle)
-            table.insert(vehicles, {
+        for i = 1, #result do
+            local vehicleProps = json.decode(result[i].vehicle or "{}") or {}
+            local model = vehicleProps.model
+            local label = result[i].plate
+
+            -- NOTE:
+            -- GetDisplayNameFromVehicleModel / GetLabelText เป็น native ฝั่ง client
+            -- ฝั่ง server เรียกไม่ได้ (จะเป็น nil) จึงใช้ fallback เป็น model/plate แทน
+            if model then
+                label = tostring(model)
+            end
+
+            vehicles[#vehicles + 1] = {
                 plate = result[i].plate,
-                model = vehicleProps.model,
-                label = GetLabelText(GetDisplayNameFromVehicleModel(vehicleProps.model))
-            })
+                model = model,
+                label = label
+            }
         end
         cb(vehicles)
     end)
-end)
+end
+
+local function done(callback, success, reason)
+    if callback then
+        callback(success, reason)
+    end
+end
 
 -- ให้กุญแจรถ
-RegisterNetEvent('d9_inventory:giveVehicleKey')
-AddEventHandler('d9_inventory:giveVehicleKey', function(target, plate)
-    local src = source
+function GiveVehicleKeyToPlayer(src, target, plate, callback)
     local xPlayer = ESX.GetPlayerFromId(src)
     local xTarget = ESX.GetPlayerFromId(target)
+
+    if not xPlayer or not xTarget then
+        done(callback, false, "INVALID_PLAYER")
+        return
+    end
+
+    if type(plate) ~= "string" or plate == "" then
+        xPlayer.showNotification('~r~ทะเบียนรถไม่ถูกต้อง')
+        done(callback, false, "INVALID_PLATE")
+        return
+    end
     
     -- ตรวจสอบว่าเป็นเจ้าของรถจริง
     MySQL.Async.fetchScalar('SELECT owner FROM owned_vehicles WHERE plate = @plate', {
@@ -41,12 +69,22 @@ AddEventHandler('d9_inventory:giveVehicleKey', function(target, plate)
                 if rowsChanged > 0 then
                     xPlayer.showNotification('~g~ให้กุญแจรถหมายเลข ' .. plate .. ' สำเร็จ')
                     xTarget.showNotification('~g~ได้รับกุญแจรถหมายเลข ' .. plate .. ' จาก ' .. GetPlayerName(src))
+                    done(callback, true, "SUCCESS")
+                else
+                    xPlayer.showNotification('~r~ไม่สามารถให้กุญแจรถได้')
+                    done(callback, false, "INSERT_FAILED")
                 end
             end)
         else
             xPlayer.showNotification('~r~คุณไม่ใช่เจ้าของรถคันนี้')
+            done(callback, false, "NOT_OWNER")
         end
     end)
+end
+
+RegisterNetEvent('d9_inventory:giveVehicleKey')
+AddEventHandler('d9_inventory:giveVehicleKey', function(target, plate)
+    GiveVehicleKeyToPlayer(source, target, plate)
 end)
 
 -- ใช้กุญแจล็อครถ Devdek

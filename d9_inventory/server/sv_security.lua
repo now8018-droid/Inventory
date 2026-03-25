@@ -1,6 +1,6 @@
 ESX = exports["es_extended"]:getSharedObject()
 
-local Security = {
+Security = {
     cooldowns = {},
     transfers = {}
 }
@@ -80,12 +80,21 @@ end
 
 -- ตรวจสอบน้ำหนัก
 function Security.CheckWeight(xPlayer, itemName, count)
-    -- ต้องปรับให้เข้ากับระบบน้ำหนักของคุณ
-    -- สมมติใช้ระบบ ESX เดิม
-    local currentWeight = exports.es_extended:GetTotalWeight(xPlayer.identifier)
-    local itemWeight = ESX.GetItemWeight(itemName)
-    local maxWeight = ESX.GetConfig().MaxWeight
-    
+    if xPlayer.canCarryItem then
+        return xPlayer.canCarryItem(itemName, count)
+    end
+
+    local okWeight, currentWeight = pcall(function()
+        return exports.es_extended:GetTotalWeight(xPlayer.identifier)
+    end)
+
+    if not okWeight then
+        -- fallback: ถ้าระบบน้ำหนักไม่พร้อม ไม่ block เพื่อป้องกัน script พังทั้ง flow
+        return true
+    end
+
+    local itemWeight = ESX.GetItemWeight(itemName) or 0
+    local maxWeight = ESX.GetConfig().MaxWeight or 0
     return (currentWeight + (itemWeight * count)) <= maxWeight
 end
 
@@ -156,17 +165,6 @@ function Security.TakeAction(source, reason, details)
     -- Kick ผู้เล่น
     DropPlayer(source, "Anti-Cheat: " .. reason)
 end
-
--- นำ Security System ไปใช้ใน Event ต่างๆ
-AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, amount)
-    local src = source
-    
-    if not Security.ValidateTransfer(src, target, itemType, itemName, amount) then
-        return
-    end
-    
-    -- โอนไอเทมตามปกติ...
-end)
 
 -- สแกนผู้เล่นทุก 5 นาที
 Citizen.CreateThread(function()

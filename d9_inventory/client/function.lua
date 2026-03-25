@@ -12,6 +12,9 @@ model = {
 	SearchData = {}
 }
 
+local ENABLE_INVENTORY_SCREENBLUR = false
+local LAST_SKIP_NOTIFY_AT = 0
+
 -- @function checkItemCount
 -- @param item_name string
 -- @return number
@@ -105,18 +108,30 @@ end
 -- @param accountName string
 -- @return boolean
 function model:shouldSkipAccount(accountName)
-	for index, value in ipairs(Config.ExcludeAccountsList) do
-		if value == accountName then
-			return true
+	if not self._excludeAccountLookup then
+		self._excludeAccountLookup = {}
+		for _, value in ipairs(Config.ExcludeAccountsList) do
+			self._excludeAccountLookup[value] = true
 		end
 	end
-	return false
+	return self._excludeAccountLookup[accountName] == true
 end
 
 -- @function OpenInventiry
 function model:OpenInventiry()
 	local items, fastslot = Client:GetmyInventory()
-	TriggerScreenblurFadeIn(100)
+	local skipped = Client._inventorySkippedCount or 0
+	local renderLimit = Client._inventoryRenderLimit or 250
+	if skipped > 0 then
+		local now = GetGameTimer()
+		if now - LAST_SKIP_NOTIFY_AT > 10000 then
+			LAST_SKIP_NOTIFY_AT = now
+			ESX.ShowNotification(("~y~Performance mode: showing %s items (%s hidden, fastslot items prioritized)"):format(renderLimit, skipped))
+		end
+	end
+	if ENABLE_INVENTORY_SCREENBLUR then
+		TriggerScreenblurFadeIn(50)
+	end
 	SetNuiFocus(true, true)
 	Eventnui("openInventory", {
 		items = items,
@@ -128,16 +143,25 @@ end
 
 -- @function OnInventoryClose
 exports("OnInventoryClose", function()
-	model:CloseInventory()
+	model:CloseInventiry()
 end)
+
+-- backward compatibility alias (new name -> old typo)
+function model:CloseInventory()
+	return self:CloseInventiry()
+end
 
 -- @function CloseInventiry
 function model:CloseInventiry()
-	print('CloseInventiry')
+	if GetResourceState("d9_trunk") == "started" then
+		pcall(function()
+			exports.d9_trunk:LeaveTrunk()
+		end)
+	end
 
-	exports.d9_trunk:LeaveTrunk()
-
-	TriggerScreenblurFadeOut(100)
+	if ENABLE_INVENTORY_SCREENBLUR then
+		TriggerScreenblurFadeOut(50)
+	end
 	Eventnui("closeInventory", {})
 	self.openui = false
 	self.SearchData = {}
@@ -268,20 +292,14 @@ function model:Giveitem(data)
 			and IsPedOnFoot(playertarget)
 			and not IsPedUsingAnyScenario(playerPed)
 		then
-			local dataitem = {
-				id = Target,
-				type = data.item.type,
-				name = data.item.name,
-				count = tonumber(data.number),
-			}
 			if data.item.type == 'item_key' then
 				ESX.TriggerServerCallback(GetCurrentResourceName()..':getVehicleModelByPlate', function(hashModel)
-					if hashModel then
-						local modelName = GetDisplayNameFromVehicleModel(hashModel) 
-						local modelNameLower = string.lower(modelName)
-						nameCar = string.gsub(modelNameLower, "%s+", "_")			
-						TriggerServerEvent(GetName("sv", "giveItem"), Target, data.item.type, data.item.name, tonumber(data.number), data.item.label, Config.CarWelFare[nameCar])
-					else
+						if hashModel then
+							local modelName = GetDisplayNameFromVehicleModel(hashModel)
+							local modelNameLower = string.lower(modelName)
+							local nameCar = string.gsub(modelNameLower, "%s+", "_")
+							TriggerServerEvent(GetName("sv", "giveItem"), Target, data.item.type, data.item.name, tonumber(data.number), data.item.label, Config.CarWelFare[nameCar])
+						else
 						TriggerEvent('pNotify:SendNotification', {
 							text = 'ไม่พบข้อมูลรถ.!!!!',
 							type = 'info',

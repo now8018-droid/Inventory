@@ -1,5 +1,6 @@
 ESX = exports["es_extended"]:getSharedObject()
 local ResourceName = GetCurrentResourceName()
+local ULTRA_MAX_STANDARD_ITEMS = (Config and Config.InventoryRenderLimit) or 250
 
 -- Utility functions
 GetName = function(a, b)
@@ -14,11 +15,40 @@ ispressed = function(input, key)
 	return IsDisabledControlJustReleased(input, key)
 end
 
+local NUI_COALESCE_EVENTS = {
+	["update-fastslot"] = true,
+	["MailBoxCount"] = true
+}
+local queuedNuiMessages = {}
+local isNuiFlushScheduled = false
+
+local function flushQueuedNuiMessages()
+	isNuiFlushScheduled = false
+	for eventName, payload in pairs(queuedNuiMessages) do
+		SendNUIMessage(payload)
+		queuedNuiMessages[eventName] = nil
+	end
+end
+
 Eventnui = function(event, data)
-	SendNUIMessage({
+	local payload = {
 		event = event,
 		data = data,
-	})
+	}
+
+	if NUI_COALESCE_EVENTS[event] then
+		queuedNuiMessages[event] = payload
+		if not isNuiFlushScheduled then
+			isNuiFlushScheduled = true
+			CreateThread(function()
+				Wait(0)
+				flushQueuedNuiMessages()
+			end)
+		end
+		return
+	end
+
+	SendNUIMessage(payload)
 end
 
 local nuiReady = promise.new()
@@ -52,6 +82,11 @@ end)
 
 function Client:SetInfo(data)
 	self.infoweapon = data
+	self._weaponLabelLookup = {}
+	for i = 1, #data do
+		local weapon = data[i]
+		self._weaponLabelLookup[weapon.name] = weapon.label or weapon.name
+	end
 end
 
 function Client:SetInfoItem(data)
@@ -144,6 +179,7 @@ AddEventHandler("inventory:updateMailboxCount", function()
 end)
 
 function Client:GetmyInventory()
+	self._inventoryRenderLimit = ULTRA_MAX_STANDARD_ITEMS
 	local playerPed = PlayerPedId()
 	local playerData = ESX.GetPlayerData()
 	local inventory = playerData.inventory
@@ -206,48 +242,83 @@ function Client:GetmyInventory()
 		position = "inventory",
 	})
 
-	-- Process weapons
+	-- Process weapons (ใช้ loadout เป็นแหล่งหลัก + fallback ด้วย ped weapon)
+	local weaponLabels = self._weaponLabelLookup or {}
+
+	local addedWeapons = {}
+	local loadout = playerData.loadout or {}
+
+	local function addWeaponToInventory(weaponName, weaponLabel, ammo)
+		if not weaponName or weaponName == "WEAPON_UNARMED" or addedWeapons[weaponName] then
+			return
+		end
+
+		local weaponData = {
+			label = weaponLabel or weaponName,
+			count = ammo or 0,
+			limit = -1,
+			type = "item_weapon",
+			name = weaponName,
+			notUse = false,
+			notRemove = SettingItem.DisableRemove[weaponName],
+			notGive = SettingItem.DisableGive[weaponName],
+			rare = false,
+			position = "inventory",
+			skin = dataskin,
+			myskin = dataskin and currentskin and dataskin[currentskin]
+		}
+
+		addedWeapons[weaponName] = true
+		table.insert(items, weaponData)
+
+		local slot = fastWeaponsLookup[weaponName]
+		if slot then
+			local fastData = {}
+			for k, v in pairs(weaponData) do
+				fastData[k] = v
+			end
+			fastData.slot = slot
+			fastData.position = "fastslot"
+			table.insert(fastItems, fastData)
+		end
+	end
+
+	for i = 1, #loadout do
+		local loadoutWeapon = loadout[i]
+		local weaponName = loadoutWeapon.name
+		local ammo = loadoutWeapon.ammo
+		if ammo == nil then
+			ammo = GetAmmoInPedWeapon(playerPed, GetHashKey(weaponName))
+		end
+		addWeaponToInventory(weaponName, loadoutWeapon.label or weaponLabels[weaponName], ammo)
+	end
+
+	-- fallback: เผื่อ loadout ยัง sync ไม่ทัน แต่ ped มีอาวุธอยู่แล้ว
 	for i = 1, #self.infoweapon do
 		local weapon = self.infoweapon[i]
 		local weaponHash = GetHashKey(weapon.name)
-
-		if HasPedGotWeapon(playerPed, weaponHash, false) and weapon.name ~= "WEAPON_UNARMED" then
+		if HasPedGotWeapon(playerPed, weaponHash, false) then
 			local ammo = GetAmmoInPedWeapon(playerPed, weaponHash)
-			
-			local weaponData = {
-				label = weapon.label,
-				count = ammo,
-				limit = -1,
-				type = "item_weapon",
-				name = weapon.name,
-				notUse = false,
-				notRemove = SettingItem.DisableRemove[weapon.name],
-				notGive = SettingItem.DisableGive[weapon.name],
-				rare = false,
-				position = "inventory",
-				skin = dataskin,
-				myskin = dataskin and currentskin and dataskin[currentskin]
-			}
-			
-			table.insert(items, weaponData)
-			
-			-- Check if in fast slots
-			local slot = fastWeaponsLookup[weapon.name]
-			if slot then
-				local fastData = {}
-				for k, v in pairs(weaponData) do
-					fastData[k] = v
-				end
-				fastData.slot = slot
-				fastData.position = "fastslot"
-				table.insert(fastItems, fastData)
-			end
+			addWeaponToInventory(weapon.name, weapon.label, ammo)
 		end
 	end
 
 	-- Process Accessories
 	for k, v in pairs(Accessories) do
-		local decoded = json.decode(v)
+		local decoded = nil
+		if type(v) == "string" then
+			local ok, parsed = pcall(json.decode, v)
+			if ok and type(parsed) == "table" then
+				decoded = parsed
+			end
+		elseif type(v) == "table" then
+			decoded = v
+		end
+
+		if not decoded then
+			goto continue_accessory
+		end
+
 		table.insert(items, {
 			label = k,
 			count = 1,
@@ -261,41 +332,79 @@ function Client:GetmyInventory()
 			itemskin = decoded.mask_2,
 			position = "inventory",
 		})
+		::continue_accessory::
 	end
 
-	-- Process inventory items
+	-- Process inventory items (hard cap for ultra-performance mode)
+	local standardItemCount = 0
+	local skippedStandardItems = 0
 	if inventory then
+		local standardEntries = {}
 		for _, item in pairs(inventory) do
 			if item and item.count > 0 then
-				local itemData = {
-					label = item.label,
-					count = item.count,
-					limit = item.limit,
-					type = "item_standard",
-					name = item.name,
-					notUse = SettingItem.DisableUse[item.name],
-					notGive = SettingItem.DisableGive[item.name],
-					notRemove = SettingItem.DisableRemove[item.name],
-					rare = item.rare,
-					position = "inventory",
-				}
-				
-				table.insert(items, itemData)
-				
-				-- Check if in fast slots
-				local slot = fastWeaponsLookup[item.name]
-				if slot then
-					local fastData = {}
-					for k, v in pairs(itemData) do
-						fastData[k] = v
-					end
-					fastData.slot = slot
-					fastData.position = "fastslot"
-					table.insert(fastItems, fastData)
-				end
+				standardEntries[#standardEntries + 1] = item
 			end
 		end
+
+		-- deterministic priority:
+		-- 1) fastslot-bound items first
+		-- 2) higher count first
+		-- 3) label/name ascending for stable order
+		table.sort(standardEntries, function(a, b)
+			local aFast = fastWeaponsLookup[a.name] ~= nil
+			local bFast = fastWeaponsLookup[b.name] ~= nil
+			if aFast ~= bFast then
+				return aFast
+			end
+
+			local aCount = a.count or 0
+			local bCount = b.count or 0
+			if aCount ~= bCount then
+				return aCount > bCount
+			end
+
+			local aLabel = tostring(a.label or a.name or "")
+			local bLabel = tostring(b.label or b.name or "")
+			return aLabel < bLabel
+		end)
+
+		for i = 1, #standardEntries do
+			local item = standardEntries[i]
+			if standardItemCount >= ULTRA_MAX_STANDARD_ITEMS then
+				skippedStandardItems = skippedStandardItems + 1
+				goto continue_inventory_item
+			end
+			standardItemCount = standardItemCount + 1
+			local itemData = {
+				label = item.label,
+				count = item.count,
+				limit = item.limit,
+				type = "item_standard",
+				name = item.name,
+				notUse = SettingItem.DisableUse[item.name],
+				notGive = SettingItem.DisableGive[item.name],
+				notRemove = SettingItem.DisableRemove[item.name],
+				rare = item.rare,
+				position = "inventory",
+			}
+
+			table.insert(items, itemData)
+
+			-- Check if in fast slots
+			local slot = fastWeaponsLookup[item.name]
+			if slot then
+				local fastData = {}
+				for k, v in pairs(itemData) do
+					fastData[k] = v
+				end
+				fastData.slot = slot
+				fastData.position = "fastslot"
+				table.insert(fastItems, fastData)
+			end
+			::continue_inventory_item::
+		end
 	end
+	self._inventorySkippedCount = skippedStandardItems
 
 	-- Process vehicle keys
 	for _, v in pairs(KeyVehicle) do
@@ -312,12 +421,16 @@ function Client:GetmyInventory()
 		})
 	end
 
-	-- Pre-build category lookup for O(1) access
-	local categoryLookup = {}
-	for category, itemList in pairs(Config.Category) do
-		for _, itemName in pairs(itemList) do
-			categoryLookup[itemName] = category
+	-- Pre-build category lookup for O(1) access (cache across opens)
+	local categoryLookup = self._categoryLookup
+	if not categoryLookup then
+		categoryLookup = {}
+		for category, itemList in pairs(Config.Category) do
+			for _, itemName in pairs(itemList) do
+				categoryLookup[itemName] = category
+			end
 		end
+		self._categoryLookup = categoryLookup
 	end
 
 	-- Assign categories and additional data
@@ -683,9 +796,39 @@ function Client:LoopInit()
 	end)
 
 	Citizen.CreateThread(function()
+		local fastSlotControls = {
+			{control = 157, slot = 1},
+			{control = 158, slot = 2},
+			{control = 160, slot = 3},
+			{control = 164, slot = 4},
+			{control = 165, slot = 5},
+			{control = 159, slot = 6},
+			{control = 161, slot = 7},
+			{control = 162, slot = 8}
+		}
+
+		local function useFastSlot(slotIndex)
+			model:showfast()
+			local slotItem = self.fastWeapons and self.fastWeapons[slotIndex]
+			if not slotItem then
+				return
+			end
+
+			if slotItem.name == "key" then
+				TriggerServerEvent("meeta_remote:ServerLock", slotItem.label)
+			elseif slotItem.type == "item_weapon" then
+				SetWeapon(slotItem)
+			else
+				model:Useitem(slotItem)
+			end
+		end
+
 		while true do
-			Citizen.Wait(4)
-			if not IsPlayerDead(PlayerPedId()) and not IsDead then
+			local sleep = 250
+			local ped = PlayerPedId()
+			local isAlive = not IsPlayerDead(ped) and not IsDead
+			if isAlive then
+				sleep = 0
 				DisableControlAction(0, 37, true)
 
 				if IsControlPressed(0, 19) or UpdateOnscreenKeyboard() == 0 then
@@ -705,114 +848,15 @@ function Client:LoopInit()
 				end
 
 				if IsDisabledControlJustReleased(0, 37) then
-					log('xxxxx')
 					Eventnui("change-showtrade", {})
-				elseif IsDisabledControlJustReleased(0, 157) then
-					model:showfast()
-					if self.fastWeapons[1] then
-						if self.fastWeapons[1].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[1].label)
-						elseif self.fastWeapons[1].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[1])
-						elseif self.fastWeapons[1].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[1])
-						else
-							model:Useitem(self.fastWeapons[1])
+				else
+					for i = 1, #fastSlotControls do
+						local control = fastSlotControls[i]
+						if IsDisabledControlJustReleased(0, control.control) then
+							useFastSlot(control.slot)
+							break
 						end
 					end
-				elseif IsDisabledControlJustReleased(0, 158) then
-					model:showfast()
-					if self.fastWeapons[2] then
-						if self.fastWeapons[2].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[2].label)
-						elseif self.fastWeapons[2].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[2])
-						elseif self.fastWeapons[2].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[2])
-						else
-							model:Useitem(self.fastWeapons[2])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 160) then
-					model:showfast()
-					if self.fastWeapons[3] then
-						if self.fastWeapons[3].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[3].label)
-						elseif self.fastWeapons[3].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[3])
-						elseif self.fastWeapons[3].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[3])
-						else
-							model:Useitem(self.fastWeapons[3])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 164) then
-					model:showfast()
-					if self.fastWeapons[4] then
-						if self.fastWeapons[4].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[4].label)
-						elseif self.fastWeapons[4].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[4])
-						elseif self.fastWeapons[4].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[4])
-						else
-							model:Useitem(self.fastWeapons[4])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 165) then
-					model:showfast()
-					if self.fastWeapons[5] then
-						if self.fastWeapons[5].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[5].label)
-						elseif self.fastWeapons[5].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[5])
-						elseif self.fastWeapons[5].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[5])
-						else
-							model:Useitem(self.fastWeapons[5])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 159) then
-					model:showfast()
-					if self.fastWeapons[6] then
-						if self.fastWeapons[6].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[6].label)
-						elseif self.fastWeapons[6].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[6])
-						elseif self.fastWeapons[6].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[6])
-						else
-							model:Useitem(self.fastWeapons[6])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 161) then
-					model:showfast()
-					if self.fastWeapons[7] then
-						if self.fastWeapons[7].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[7].label)
-						elseif self.fastWeapons[7].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[7])
-						elseif self.fastWeapons[7].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[7])
-						else
-							model:Useitem(self.fastWeapons[7])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 162) then
-					model:showfast()
-					if self.fastWeapons[8] then
-						if self.fastWeapons[8].name == "key" then
-							TriggerServerEvent("meeta_remote:ServerLock", self.fastWeapons[8].label)
-						elseif self.fastWeapons[8].type == "item_weapon" then
-							SetWeapon(self.fastWeapons[8])
-						elseif self.fastWeapons[8].type == "item_accessories" then
-							model:Useitem(self.fastWeapons[8])
-						else
-							model:Useitem(self.fastWeapons[8])
-						end
-					end
-				elseif IsDisabledControlJustReleased(0, 37) then
-					HudForceWeaponWheel(false)
 				end
 
 				if IsControlJustReleased(0, 24) or IsControlJustReleased(0, 45) then
@@ -829,6 +873,7 @@ function Client:LoopInit()
 
 				::back::
 			end
+			Citizen.Wait(sleep)
 		end
 	end)
 end
@@ -842,6 +887,7 @@ function Client:InitWeapon()
 	local IsSetWeapon = false
 	local varweapon = nil
 	local blockat = false
+	local blockatThreadRunning = false
 
 	function loadAnimDict(dict)
 		while not HasAnimDictLoaded(dict) do
@@ -852,9 +898,13 @@ function Client:InitWeapon()
 
 	blockatk = function()
 		blockat = true
+		if blockatThreadRunning then
+			return
+		end
+		blockatThreadRunning = true
 		Citizen.CreateThread(function()
 			while true do
-				Citizen.Wait(1)
+				Citizen.Wait(0)
 				if blockat then
 					if IsControlJustReleased(0, 24) or IsControlJustReleased(0, 45) then
 						if GetSelectedPedWeapon(PlayerPedId()) == GetHashKey("WEAPON_UNARMED") then
@@ -872,10 +922,9 @@ function Client:InitWeapon()
 					DisableControlAction(0, 45, true) -- Attack
 					DisableControlAction(0, 257, true) -- Attack 2
 				else
+					blockatThreadRunning = false
 					break
 				end
-
-
 			end
 		end)
 	end

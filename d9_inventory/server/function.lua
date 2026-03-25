@@ -1,42 +1,49 @@
+local TRADE_DISTANCE_LIMIT = (Config and Config.DistanceGive) or 3.0
+local SEARCH_DISTANCE_LIMIT = 5.0
+
+local function isWithinDistance(fromSource, toSource, maxDistance)
+    local fromPed = GetPlayerPed(fromSource)
+    local toPed = GetPlayerPed(toSource)
+    if fromPed <= 0 or toPed <= 0 then
+        return false
+    end
+
+    local distance = #(GetEntityCoords(fromPed) - GetEntityCoords(toPed))
+    return distance <= maxDistance
+end
+
+local function canSearchTarget(xPlayer, xTarget, typeName)
+    if not xPlayer or not xTarget then
+        return false
+    end
+
+    if typeName == 'police' and xPlayer.job.name ~= 'police' then
+        return false
+    end
+
+    return isWithinDistance(xPlayer.source, xTarget.source, SEARCH_DISTANCE_LIMIT)
+end
+
 -- ตรวจสอบการโอนไอเทมระหว่างผู้เล่น
 RegisterNetEvent("esx_inventoryhud:tradePlayerItem")
 AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType, itemName, count, tradeType)
     local src = source
-    local xPlayer = ESX.GetPlayerFromId(from)
+    if type(to) ~= "number" or to == src then return end
+    if type(itemType) ~= "string" or type(itemName) ~= "string" then return end
+
     local xTarget = ESX.GetPlayerFromId(to)
-    
-    if not xPlayer or not xTarget then return end
-    
-    -- ตรวจสอบการโกง
-    if src ~= from then
-        print(('^1[ANTICHEAT] %s พยายามโกงการโอนไอเทม'):format(GetPlayerName(src)))
-        return
-    end
-    
+    if not xTarget then return end
+
     -- ตรวจสอบระยะทาง
-    if #(GetEntityCoords(GetPlayerPed(from)) - GetEntityCoords(GetPlayerPed(to))) > 5.0 then
+    if #(GetEntityCoords(GetPlayerPed(src)) - GetEntityCoords(GetPlayerPed(to))) > TRADE_DISTANCE_LIMIT then
         return
     end
-    
-    count = ESX.Math.Round(count)
-    
-    if itemType == 'item_standard' then
-        local item = xPlayer.getInventoryItem(itemName)
-        if item and item.count >= count then
-            xPlayer.removeInventoryItem(itemName, count)
-            xTarget.addInventoryItem(itemName, count)
-            
-            -- Log การโอน
-            print(('^3[TRADE] %s ให้ %s จำนวน %s %s'):format(
-                GetPlayerName(from), GetPlayerName(to), count, itemName
-            ))
-        end
-    elseif itemType == 'item_weapon' then
-        if xPlayer.hasWeapon(itemName) then
-            local weapon = xPlayer.getWeapon(itemName)
-            xPlayer.removeWeapon(itemName)
-            xTarget.addWeapon(itemName, weapon.ammo)
-        end
+
+    count = ESX.Math.Round(tonumber(count) or 0)
+    if count < 1 then return end
+
+    if ProcessInventoryTransfer then
+        ProcessInventoryTransfer(src, to, itemType, itemName, count)
     end
 end)
 
@@ -45,16 +52,13 @@ RegisterNetEvent(GetName('sv','SearchPlayer'))
 AddEventHandler(GetName('sv','SearchPlayer'), function(SecondName, Typename, Action, items, count, job, SearchData)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
+    if not SearchData or not SearchData.id then return end
     local xTarget = ESX.GetPlayerFromId(SearchData.id)
     
-    if not xPlayer or not xTarget then return end
-    
-    -- ตรวจสอบสิทธิ์ (เช่น ตำรวจเท่านั้นที่ค้นหาได้)
-    if Typename == 'police' and xPlayer.job.name ~= 'police' then
-        return
-    end
+    if not canSearchTarget(xPlayer, xTarget, Typename) then return end
     
     count = ESX.Math.Round(count)
+    if count < 1 then return end
     
     if Action == "TakeFromSecond" then
         -- เอาไอเทมจากผู้เล่นที่ถูกค้น
@@ -62,6 +66,7 @@ AddEventHandler(GetName('sv','SearchPlayer'), function(SecondName, Typename, Act
         if item and item.count >= count then
             xTarget.removeInventoryItem(items.name, count)
             xPlayer.addInventoryItem(items.name, count)
+            print(('[SEARCH] %s took %s x%s from %s'):format(GetPlayerName(src), items.name, count, GetPlayerName(xTarget.source)))
         end
     elseif Action == "PutIntoSecond" then
         -- เอาไอเทมคืนให้ผู้เล่นที่ถูกค้น
@@ -69,6 +74,7 @@ AddEventHandler(GetName('sv','SearchPlayer'), function(SecondName, Typename, Act
         if item and item.count >= count then
             xPlayer.removeInventoryItem(items.name, count)
             xTarget.addInventoryItem(items.name, count)
+            print(('[SEARCH] %s returned %s x%s to %s'):format(GetPlayerName(src), items.name, count, GetPlayerName(xTarget.source)))
         end
     end
     

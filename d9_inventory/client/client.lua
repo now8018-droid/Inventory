@@ -11,17 +11,19 @@ Client = {
 
 	meleeatk = false,
 
-	GetVehicle = function()
-		local result = lib.callback.await(GetName("callback", "Vehicle"))
-		KeyVehicle = result
-		return KeyVehicle
-	end,
-
 }
 
+local function awaitServerCallback(name, ...)
+	local p = promise.new()
+	ESX.TriggerServerCallback(name, function(result)
+		p:resolve(result)
+	end, ...)
+	return Citizen.Await(p)
+end
+
 function Client:GetAccessories()
-	local result = lib.callback.await(GetName("callback", "Accessories"))
-	self.Accessories.mask = result
+	local result = awaitServerCallback(GetName("callback", "Accessories"))
+	self.Accessories = result or {}
 	return self.Accessories
 end
 
@@ -37,7 +39,7 @@ end)
 -- end
 
 function Client:GetVehicle()
-	local result = lib.callback.await(GetName("callback", "Vehicle"))
+	local result = awaitServerCallback(GetName("callback", "Vehicle"))
 	self.KeyVehicle = result
 	return self.KeyVehicle
 end
@@ -45,6 +47,30 @@ end
 RegisterNetEvent("esx_inventoryhud:GetVehicleKey")
 AddEventHandler("esx_inventoryhud:GetVehicleKey", function()
 	Client:GetVehicle()
+end)
+
+RegisterNetEvent("d9_inventory:lockVehicle")
+AddEventHandler("d9_inventory:lockVehicle", function(plate)
+	local ped = PlayerPedId()
+	local coords = GetEntityCoords(ped)
+	local vehicle = ESX.Game.GetClosestVehicle(coords)
+
+	if vehicle == 0 then
+		ESX.ShowNotification("~r~ไม่พบรถใกล้ตัว")
+		return
+	end
+
+	local vehiclePlate = ESX.Math.Trim(GetVehicleNumberPlateText(vehicle))
+	if vehiclePlate ~= ESX.Math.Trim(plate or "") then
+		ESX.ShowNotification("~r~คุณไม่ได้อยู่ใกล้รถทะเบียนนี้")
+		return
+	end
+
+	local isLocked = GetVehicleDoorLockStatus(vehicle) == 2
+	SetVehicleDoorsLocked(vehicle, isLocked and 1 or 2)
+	SetVehicleDoorsLockedForAllPlayers(vehicle, not isLocked)
+	PlayVehicleDoorCloseSound(vehicle, 1)
+	ESX.ShowNotification(isLocked and "~g~ปลดล็อครถแล้ว" or "~y~ล็อครถแล้ว")
 end)
 
 local updateDebounce = nil
@@ -92,9 +118,17 @@ function Client:InitRegis()
 		Client:UpdateInventory()
 	end)
 
-	RegisEvent("esx_inventoryhud:setmask", function(skin)
-		self.Accessories.mask = skin
-	end)
+		RegisEvent("esx_inventoryhud:setmask", function(skin)
+			if type(skin) == "table" then
+				self.Accessories.mask = json.encode({
+					mask_1 = skin.mask_1 or -1,
+					mask_2 = skin.mask_2 or 0,
+				})
+			else
+				self.Accessories.mask = skin
+			end
+			Client:UpdateInventory()
+		end)
 
 	RegisEvent("wonder_invnetory:updatekey", function(skin)
 		Client:GetVehicle()
