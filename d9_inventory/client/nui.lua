@@ -3,13 +3,24 @@ function model:InitNUI()
 		model:CloseInventiry()
 	end)
 
-	RegisterNUICallback("UseItem", function(data, cb)
-		if not data then
-			cb(false)
-			return
+	local function respond(cb, value)
+		if cb then
+			cb(value)
 		end
+	end
+
+	local function requireData(data, cb, emptyValue)
+		if data then
+			return true
+		end
+		respond(cb, emptyValue)
+		return false
+	end
+
+	RegisterNUICallback("UseItem", function(data, cb)
+		if not requireData(data, cb, false) then return end
 		model:Useitem(data.item)
-		cb(true)
+		respond(cb, true)
 	end)
 
 	local function Draw3dText(coords, text, outline, color, scale)
@@ -136,54 +147,49 @@ function model:InitNUI()
 	end
 
 	RegisterNUICallback("GiveItem", function(data, cb)
-		if not data then
-			cb(false)
-			return
-		end
+		if not requireData(data, cb, false) then return end
 		model:CloseInventiry()
 		data.id = SelectNearbyPlayer()
 		if not data.id then
-			cb(true)
+			respond(cb, true)
 			return
 		end
 		data.number = tonumber(data.number)
 		model:Giveitem(data)
-		cb(true)
+		respond(cb, true)
 	end)
 
 	RegisterNUICallback("DropItem", function(data, cb)
-		if not data then
-			cb(false)
-			return
-		end
+		if not requireData(data, cb, false) then return end
 
 		data.number = tonumber(data.number)
 		if not data.number then
-			cb(false)
+			respond(cb, false)
 			return
 		end
 
 		model:DropItem(data)
-		cb(true)
+		respond(cb, true)
 	end)
 
 	RegisterNUICallback("PutIntoFast", function(data, callback)
-		if not data then
-			callback(false)
-			return
-		end
+		if not requireData(data, callback, false) then return end
 
 		local fastslot = Client.fastWeapons
 
 		local main = data.item
+		if not main then
+			respond(callback, false)
+			return
+		end
 
 		if main.name == "money" or main.name == "black_money" or main.name == "id_card" or data.category == "key" then
-			callback(false)
+			respond(callback, false)
 			return
 		end
 
 		if SettingItem.Blockfastslot and SettingItem.Blockfastslot[main.name] == true then
-			callback(false)
+			respond(callback, false)
 			return
 		end
 
@@ -194,13 +200,13 @@ function model:InitNUI()
 		end
 
 		if fastslot[data.slot] ~= nil then
-				if data.item.position ~= "fastslot" then
+			if data.item.position ~= "fastslot" then
 				fastslot[data.slot] = nil
 				fastslot[data.slot] = data.item
 				fastslot[data.slot].position = "fastslot"
-				else
-					local item1 = data.item
-					local item2 = fastslot[data.slot] -- Target
+			else
+				local item1 = data.item
+				local item2 = fastslot[data.slot] -- Target
 
 				fastslot[item1.slot] = nil
 				fastslot[item2.slot] = nil
@@ -216,14 +222,10 @@ function model:InitNUI()
 		end
 		Client.fastWeapons = fastslot
 		Client:UpdateFastslot()
-		callback(true)
+		respond(callback, true)
 	end)
 	RegisterNUICallback("ChangeFastslot", function(data, cb)
-
-		if not data then
-			cb(false)
-			return
-		end
+		if not requireData(data, cb, false) then return end
 
 		-- if data.type == 'up' then
 		-- 	Client.selectfastslot = Client.selectfastslot + 1
@@ -239,30 +241,27 @@ function model:InitNUI()
 
 		Client.selectfastslot = data.template
 
-		local main = Client.fastWeapons
-			if Client.allfastslot[Client.selectfastslot] then
-				Client.fastWeapons = Client.allfastslot[Client.selectfastslot]
-				Client:UpdateFastslot()
-			end
-		cb(true)
+		if Client.allfastslot[Client.selectfastslot] then
+			Client.fastWeapons = Client.allfastslot[Client.selectfastslot]
+			Client:UpdateFastslot()
+		end
+		respond(cb, true)
 	end)
 
 	RegisterNUICallback("TakeFromFast", function(data, cb)
+		if not requireData(data, cb, false) then return end
 		local fastslot = Client.fastWeapons
 		if fastslot[data.slot] ~= nil then
 			fastslot[data.slot] = nil
 			Client:UpdateFastslot()
-			cb("ok")
+			respond(cb, "ok")
 			return
 		end
-		cb(false)
+		respond(cb, false)
 	end)
 
 	RegisterNUICallback("SecondaryInventoryAction", function(data, cb)
-		if not data then
-			cb(false)
-			return
-		end
+		if not requireData(data, cb, false) then return end
 		Citizen.CreateThread(function()
 			Config.ClientSecondaryInventoryAction(
 				self.SecondType,
@@ -274,52 +273,40 @@ function model:InitNUI()
 				self.SearchData
 			)
 		end)
-		cb(true)
+		respond(cb, true)
 	end)
 
 	-- transferitem
 
 	RegisterNUICallback("ChangeSkinWeapon", function(data, cb)
-		if not data then
-			cb(false)
-			return
-		end
-		cb(xWeapon:SetSkinByWeapon(data.item.name, data.skin))
+		if not requireData(data, cb, false) then return end
+		respond(cb, xWeapon:SetSkinByWeapon(data.item.name, data.skin))
 		-- cb(true)
 	end)
 	RegisterNUICallback("ClearSkinWeapon", function(data, cb)
-		if not data then
-			cb(false)
-			return
-		end
-		cb(xWeapon:ClearSkinByWeapon(data.item.name))
+		if not requireData(data, cb, false) then return end
+		respond(cb, xWeapon:ClearSkinByWeapon(data.item.name))
 		-- cb(true)
 	end)
 
 	RegisterNUICallback("GetMailbox", function(data, cb)
-		if not data then
-			cb({})
-			return
-		end
+		if not requireData(data, cb, {}) then return end
 		if GetResourceState('d9_mailbox') == 'missing' then
-			cb({})
+			respond(cb, {})
 			return
 		end
 		exports['AP29_PlaySound2']:playsound('click.mp3', 0.7)
-		cb(exports["d9_mailbox"]:GetMailbox())
+		respond(cb, exports["d9_mailbox"]:GetMailbox())
 	end)
 
 	RegisterNUICallback("PickupMail", function(data, cb)
-		if not data then
-			cb(false)
-			return
-		end
+		if not requireData(data, cb, false) then return end
 		if GetResourceState("d9_mailbox") == "missing" then
-			cb(false)
+			respond(cb, false)
 			return
 		end
 		exports['AP29_PlaySound2']:playsound('click.mp3', 0.7)
-		cb(exports["d9_mailbox"]:PickUpMail(data))
+		respond(cb, exports["d9_mailbox"]:PickUpMail(data))
 	end)
 
 end
