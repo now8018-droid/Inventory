@@ -5,13 +5,14 @@ function model:InitNUI()
 
 	RegisterNUICallback("UseItem", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 		model:Useitem(data.item)
 		cb(true)
 	end)
 
-	function Draw3dText(coords, text, outline, color, scale)
+	local function Draw3dText(coords, text, outline, color, scale)
 		RegisterFontFile("font4thai");
 		local fontId = RegisterFontId("font4thai");
 		local camCoords = GetGameplayCamCoord()
@@ -38,7 +39,7 @@ function model:InitNUI()
 		ClearDrawOrigin()
 	end
 
-	function SelectNearbyPlayer()
+	local function SelectNearbyPlayer()
 		local p = promise.new()
 		local nearbyPlayers = {}
 		local key = {
