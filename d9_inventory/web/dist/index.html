@@ -14,17 +14,15 @@
     <script type="module" crossorigin src="./assets/index-CmgWqK3k.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-lKaF8FZ1.css">
     <style>
-      /* Performance overrides for large inventories (500+ player environments) */
+      /* Ultra performance mode: minimize UI animation work for huge inventories */
       .fade-enter-active,
       .fade-leave-active,
-      .fade-move {
-        transition-duration: 0.18s !important;
-      }
-
+      .fade-move,
+      .transition,
+      .transition-all,
       .itembox {
-        transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-        backface-visibility: hidden;
-        transform: translateZ(0);
+        transition: none !important;
+        animation: none !important;
       }
 
       /* Let browser skip offscreen rendering work in long item lists */

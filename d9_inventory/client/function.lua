@@ -12,6 +12,8 @@ model = {
 	SearchData = {}
 }
 
+local ENABLE_INVENTORY_SCREENBLUR = false
+
 -- @function checkItemCount
 -- @param item_name string
 -- @return number
@@ -117,7 +119,9 @@ end
 -- @function OpenInventiry
 function model:OpenInventiry()
 	local items, fastslot = Client:GetmyInventory()
-	TriggerScreenblurFadeIn(100)
+	if ENABLE_INVENTORY_SCREENBLUR then
+		TriggerScreenblurFadeIn(50)
+	end
 	SetNuiFocus(true, true)
 	Eventnui("openInventory", {
 		items = items,
@@ -145,7 +149,9 @@ function model:CloseInventiry()
 		end)
 	end
 
-	TriggerScreenblurFadeOut(100)
+	if ENABLE_INVENTORY_SCREENBLUR then
+		TriggerScreenblurFadeOut(50)
+	end
 	Eventnui("closeInventory", {})
 	self.openui = false
 	self.SearchData = {}
