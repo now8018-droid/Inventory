@@ -52,6 +52,11 @@ end)
 
 function Client:SetInfo(data)
 	self.infoweapon = data
+	self._weaponLabelLookup = {}
+	for i = 1, #data do
+		local weapon = data[i]
+		self._weaponLabelLookup[weapon.name] = weapon.label or weapon.name
+	end
 end
 
 function Client:SetInfoItem(data)
@@ -207,11 +212,7 @@ function Client:GetmyInventory()
 	})
 
 	-- Process weapons (ใช้ loadout เป็นแหล่งหลัก + fallback ด้วย ped weapon)
-	local weaponLabels = {}
-	for i = 1, #self.infoweapon do
-		local weapon = self.infoweapon[i]
-		weaponLabels[weapon.name] = weapon.label or weapon.name
-	end
+	local weaponLabels = self._weaponLabelLookup or {}
 
 	local addedWeapons = {}
 	local loadout = playerData.loadout or {}
@@ -352,12 +353,16 @@ function Client:GetmyInventory()
 		})
 	end
 
-	-- Pre-build category lookup for O(1) access
-	local categoryLookup = {}
-	for category, itemList in pairs(Config.Category) do
-		for _, itemName in pairs(itemList) do
-			categoryLookup[itemName] = category
+	-- Pre-build category lookup for O(1) access (cache across opens)
+	local categoryLookup = self._categoryLookup
+	if not categoryLookup then
+		categoryLookup = {}
+		for category, itemList in pairs(Config.Category) do
+			for _, itemName in pairs(itemList) do
+				categoryLookup[itemName] = category
+			end
 		end
+		self._categoryLookup = categoryLookup
 	end
 
 	-- Assign categories and additional data
@@ -775,7 +780,6 @@ function Client:LoopInit()
 				end
 
 				if IsDisabledControlJustReleased(0, 37) then
-					log('xxxxx')
 					Eventnui("change-showtrade", {})
 				else
 					for i = 1, #fastSlotControls do

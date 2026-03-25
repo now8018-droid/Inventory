@@ -139,8 +139,6 @@ end
 
 -- @function CloseInventiry
 function model:CloseInventiry()
-	print('CloseInventiry')
-
 	if GetResourceState("d9_trunk") == "started" then
 		pcall(function()
 			exports.d9_trunk:LeaveTrunk()
