@@ -2,3 +2,5 @@
 .inventory-root{transform:translate(-50%,-50%);transform-origin:center center}
 /* hotfix: restore fastslot square size for scoped component data-v-41036f3e */
 .Fastslot[data-v-41036f3e]{width:calc(70 * var(--px));height:calc(70 * var(--px));flex:0 0 calc(70 * var(--px));}
+/* match reference UI: keep only slot index badge in fastslot panel */
+.Fastslot[data-v-41036f3e]>div:nth-child(n+2){display:none}
