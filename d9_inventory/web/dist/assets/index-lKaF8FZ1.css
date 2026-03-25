@@ -2,3 +2,5 @@
 .inventory-root{transform:translate(-50%,-50%);transform-origin:center center}
 /* hotfix: restore fastslot square size for scoped component data-v-41036f3e */
 .Fastslot[data-v-41036f3e]{width:calc(98 * var(--px));height:calc(98 * var(--px));flex:0 0 calc(98 * var(--px));}
+/* configurable topbar width */
+[data-v-5abd30f8].pv\:w-full{width:var(--inv-topbar-width,100%)!important;max-width:var(--inv-topbar-width,100%)!important}
