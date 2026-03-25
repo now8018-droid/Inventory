@@ -136,6 +136,7 @@ function model:InitNUI()
 
 	RegisterNUICallback("GiveItem", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 		model:CloseInventiry()
@@ -151,10 +152,15 @@ function model:InitNUI()
 
 	RegisterNUICallback("DropItem", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 
 		data.number = tonumber(data.number)
+		if not data.number then
+			cb(false)
+			return
+		end
 
 		model:DropItem(data)
 		cb(true)
