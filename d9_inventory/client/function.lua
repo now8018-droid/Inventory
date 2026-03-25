@@ -105,12 +105,13 @@ end
 -- @param accountName string
 -- @return boolean
 function model:shouldSkipAccount(accountName)
-	for index, value in ipairs(Config.ExcludeAccountsList) do
-		if value == accountName then
-			return true
+	if not self._excludeAccountLookup then
+		self._excludeAccountLookup = {}
+		for _, value in ipairs(Config.ExcludeAccountsList) do
+			self._excludeAccountLookup[value] = true
 		end
 	end
-	return false
+	return self._excludeAccountLookup[accountName] == true
 end
 
 -- @function OpenInventiry

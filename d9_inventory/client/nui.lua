@@ -168,6 +168,7 @@ function model:InitNUI()
 
 	RegisterNUICallback("PutIntoFast", function(data, callback)
 		if not data then
+			callback(false)
 			return
 		end
 
@@ -176,10 +177,12 @@ function model:InitNUI()
 		local main = data.item
 
 		if main.name == "money" or main.name == "black_money" or main.name == "id_card" or data.category == "key" then
+			callback(false)
 			return
 		end
-			
+
 		if SettingItem.Blockfastslot and SettingItem.Blockfastslot[main.name] == true then
+			callback(false)
 			return
 		end
 
@@ -190,13 +193,13 @@ function model:InitNUI()
 		end
 
 		if fastslot[data.slot] ~= nil then
-			if data.item.position ~= "fastslot" then
+				if data.item.position ~= "fastslot" then
 				fastslot[data.slot] = nil
 				fastslot[data.slot] = data.item
 				fastslot[data.slot].position = "fastslot"
-			else
-				item1 = data.item
-				item2 = fastslot[data.slot] -- Target
+				else
+					local item1 = data.item
+					local item2 = fastslot[data.slot] -- Target
 
 				fastslot[item1.slot] = nil
 				fastslot[item2.slot] = nil
@@ -212,10 +215,12 @@ function model:InitNUI()
 		end
 		Client.fastWeapons = fastslot
 		Client:UpdateFastslot()
+		callback(true)
 	end)
 	RegisterNUICallback("ChangeFastslot", function(data, cb)
 
 		if not data then
+			cb(false)
 			return
 		end
 
@@ -234,10 +239,11 @@ function model:InitNUI()
 		Client.selectfastslot = data.template
 
 		local main = Client.fastWeapons
-		if Client.allfastslot[Client.selectfastslot] then
-			Client.fastWeapons = Client.allfastslot[Client.selectfastslot]
-			Client:UpdateFastslot()
-		end
+			if Client.allfastslot[Client.selectfastslot] then
+				Client.fastWeapons = Client.allfastslot[Client.selectfastslot]
+				Client:UpdateFastslot()
+			end
+		cb(true)
 	end)
 
 	RegisterNUICallback("TakeFromFast", function(data, cb)
@@ -246,11 +252,14 @@ function model:InitNUI()
 			fastslot[data.slot] = nil
 			Client:UpdateFastslot()
 			cb("ok")
+			return
 		end
+		cb(false)
 	end)
 
 	RegisterNUICallback("SecondaryInventoryAction", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 		Citizen.CreateThread(function()
@@ -271,6 +280,7 @@ function model:InitNUI()
 
 	RegisterNUICallback("ChangeSkinWeapon", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 		cb(xWeapon:SetSkinByWeapon(data.item.name, data.skin))
@@ -278,6 +288,7 @@ function model:InitNUI()
 	end)
 	RegisterNUICallback("ClearSkinWeapon", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 		cb(xWeapon:ClearSkinByWeapon(data.item.name))
@@ -286,9 +297,11 @@ function model:InitNUI()
 
 	RegisterNUICallback("GetMailbox", function(data, cb)
 		if not data then
+			cb({})
 			return
 		end
-		if GetResourceState('d9_mailbox') == 'missing' then 
+		if GetResourceState('d9_mailbox') == 'missing' then
+			cb({})
 			return
 		end
 		exports['AP29_PlaySound2']:playsound('click.mp3', 0.7)
@@ -297,9 +310,11 @@ function model:InitNUI()
 
 	RegisterNUICallback("PickupMail", function(data, cb)
 		if not data then
+			cb(false)
 			return
 		end
 		if GetResourceState("d9_mailbox") == "missing" then
+			cb(false)
 			return
 		end
 		exports['AP29_PlaySound2']:playsound('click.mp3', 0.7)

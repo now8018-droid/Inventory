@@ -273,7 +273,20 @@ function Client:GetmyInventory()
 
 	-- Process Accessories
 	for k, v in pairs(Accessories) do
-		local decoded = json.decode(v)
+		local decoded = nil
+		if type(v) == "string" then
+			local ok, parsed = pcall(json.decode, v)
+			if ok and type(parsed) == "table" then
+				decoded = parsed
+			end
+		elseif type(v) == "table" then
+			decoded = v
+		end
+
+		if not decoded then
+			goto continue_accessory
+		end
+
 		table.insert(items, {
 			label = k,
 			count = 1,
@@ -287,6 +300,7 @@ function Client:GetmyInventory()
 			itemskin = decoded.mask_2,
 			position = "inventory",
 		})
+		::continue_accessory::
 	end
 
 	-- Process inventory items
