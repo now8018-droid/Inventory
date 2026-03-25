@@ -13,8 +13,16 @@ Client = {
 
 }
 
+local function awaitServerCallback(name, ...)
+	local p = promise.new()
+	ESX.TriggerServerCallback(name, function(result)
+		p:resolve(result)
+	end, ...)
+	return Citizen.Await(p)
+end
+
 function Client:GetAccessories()
-	local result = lib.callback.await(GetName("callback", "Accessories"))
+	local result = awaitServerCallback(GetName("callback", "Accessories"))
 	self.Accessories = result or {}
 	return self.Accessories
 end
@@ -31,7 +39,7 @@ end)
 -- end
 
 function Client:GetVehicle()
-	local result = lib.callback.await(GetName("callback", "Vehicle"))
+	local result = awaitServerCallback(GetName("callback", "Vehicle"))
 	self.KeyVehicle = result
 	return self.KeyVehicle
 end
