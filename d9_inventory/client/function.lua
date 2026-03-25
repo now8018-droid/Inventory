@@ -13,6 +13,7 @@ model = {
 }
 
 local ENABLE_INVENTORY_SCREENBLUR = false
+local LAST_SKIP_NOTIFY_AT = 0
 
 -- @function checkItemCount
 -- @param item_name string
@@ -119,6 +120,15 @@ end
 -- @function OpenInventiry
 function model:OpenInventiry()
 	local items, fastslot = Client:GetmyInventory()
+	local skipped = Client._inventorySkippedCount or 0
+	local renderLimit = Client._inventoryRenderLimit or 250
+	if skipped > 0 then
+		local now = GetGameTimer()
+		if now - LAST_SKIP_NOTIFY_AT > 10000 then
+			LAST_SKIP_NOTIFY_AT = now
+			ESX.ShowNotification(("~y~Performance mode: showing first %s items (%s hidden)"):format(renderLimit, skipped))
+		end
+	end
 	if ENABLE_INVENTORY_SCREENBLUR then
 		TriggerScreenblurFadeIn(50)
 	end

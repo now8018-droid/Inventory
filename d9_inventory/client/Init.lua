@@ -1,5 +1,6 @@
 ESX = exports["es_extended"]:getSharedObject()
 local ResourceName = GetCurrentResourceName()
+local ULTRA_MAX_STANDARD_ITEMS = (Config and Config.InventoryRenderLimit) or 250
 
 -- Utility functions
 GetName = function(a, b)
@@ -149,6 +150,7 @@ AddEventHandler("inventory:updateMailboxCount", function()
 end)
 
 function Client:GetmyInventory()
+	self._inventoryRenderLimit = ULTRA_MAX_STANDARD_ITEMS
 	local playerPed = PlayerPedId()
 	local playerData = ESX.GetPlayerData()
 	local inventory = playerData.inventory
@@ -304,10 +306,17 @@ function Client:GetmyInventory()
 		::continue_accessory::
 	end
 
-	-- Process inventory items
+	-- Process inventory items (hard cap for ultra-performance mode)
+	local standardItemCount = 0
+	local skippedStandardItems = 0
 	if inventory then
 		for _, item in pairs(inventory) do
 			if item and item.count > 0 then
+				if standardItemCount >= ULTRA_MAX_STANDARD_ITEMS then
+					skippedStandardItems = skippedStandardItems + 1
+					goto continue_inventory_item
+				end
+				standardItemCount = standardItemCount + 1
 				local itemData = {
 					label = item.label,
 					count = item.count,
@@ -335,8 +344,10 @@ function Client:GetmyInventory()
 					table.insert(fastItems, fastData)
 				end
 			end
+			::continue_inventory_item::
 		end
 	end
+	self._inventorySkippedCount = skippedStandardItems
 
 	-- Process vehicle keys
 	for _, v in pairs(KeyVehicle) do
