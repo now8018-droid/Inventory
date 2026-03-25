@@ -184,6 +184,12 @@ function model:InitNUI()
 		if not requireData(data, callback, false) then return end
 
 		local fastslot = Client.fastWeapons
+		local maxFastslot = tonumber(Config.MaxFastslot) or 7
+		local targetSlot = tonumber(data.slot)
+		if not targetSlot or targetSlot < 1 or targetSlot > maxFastslot then
+			respond(callback, false)
+			return
+		end
 
 		local main = data.item
 		if not main then
@@ -207,14 +213,14 @@ function model:InitNUI()
 			end
 		end
 
-		if fastslot[data.slot] ~= nil then
+		if fastslot[targetSlot] ~= nil then
 			if data.item.position ~= "fastslot" then
-				fastslot[data.slot] = nil
-				fastslot[data.slot] = data.item
-				fastslot[data.slot].position = "fastslot"
+				fastslot[targetSlot] = nil
+				fastslot[targetSlot] = data.item
+				fastslot[targetSlot].position = "fastslot"
 			else
 				local item1 = data.item
-				local item2 = fastslot[data.slot] -- Target
+				local item2 = fastslot[targetSlot] -- Target
 
 				fastslot[item1.slot] = nil
 				fastslot[item2.slot] = nil
@@ -225,8 +231,8 @@ function model:InitNUI()
 				fastslot[item2.slot].slot = item1.slot
 			end
 		else
-			fastslot[data.slot] = main
-			fastslot[data.slot].position = "fastslot"
+			fastslot[targetSlot] = main
+			fastslot[targetSlot].position = "fastslot"
 		end
 		Client.fastWeapons = fastslot
 		Client:UpdateFastslot()
@@ -259,8 +265,14 @@ function model:InitNUI()
 	RegisterNUICallback("TakeFromFast", function(data, cb)
 		if not requireData(data, cb, false) then return end
 		local fastslot = Client.fastWeapons
-		if fastslot[data.slot] ~= nil then
-			fastslot[data.slot] = nil
+		local maxFastslot = tonumber(Config.MaxFastslot) or 7
+		local targetSlot = tonumber(data.slot)
+		if not targetSlot or targetSlot < 1 or targetSlot > maxFastslot then
+			respond(cb, false)
+			return
+		end
+		if fastslot[targetSlot] ~= nil then
+			fastslot[targetSlot] = nil
 			Client:UpdateFastslot()
 			respond(cb, "ok")
 			return

@@ -117,6 +117,7 @@ function Client:Setup()
 		items = items,
 		Type = fastslot,
 		selectfastslot = self.selectfastslot,
+		maxFastslot = Config.MaxFastslot or 7,
 		playerid = GetPlayerServerId(PlayerId()),
 		blockcategory = Config.blocktypeonallcategory,
 		Template = Template.color,

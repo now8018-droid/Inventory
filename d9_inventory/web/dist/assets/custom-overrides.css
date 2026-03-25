@@ -1,0 +1,235 @@
+/*
+  Inventory NUI custom CSS overrides
+  - Edit variables below to tune UI without touching minified bundles.
+  - Loaded AFTER index-lKaF8FZ1.css
+*/
+:root {
+  --inv-fastslot-size: calc(98 * var(--px));
+  --inv-fastslot-gap: calc(10 * var(--px));
+  --inv-fastslot-col-width: calc(98 * var(--px));
+
+  --inv-topbar-height: calc(36 * var(--px));
+  --inv-panel-height: calc(800 * var(--px));
+  --inv-panel-radius: calc(16 * var(--px));
+  --inv-slot-radius: calc(10 * var(--px));
+  --inv-root-offset-x: 0px;
+  --inv-root-offset-y: 0px;
+
+  /* data-v-5abd30f8 (Topbar) */
+  --inv-topbar-icon-size: calc(34 * var(--px));
+  --inv-topbar-icon-radius: calc(8 * var(--px));
+  --inv-topbar-title-size: calc(28 * var(--px));
+  --inv-topbar-weight: 700;
+  --inv-topbar-title-color: #ffffff;
+  --inv-topbar-group-gap: calc(6 * var(--px));
+  --inv-topbar-cat-padding-x: calc(8 * var(--px));
+  --inv-topbar-cat-font-size: calc(10 * var(--px));
+  --inv-topbar-cat-font-weight: 400;
+  --inv-topbar-cat-text-color: #ffffff;
+  --inv-topbar-search-width: calc(170 * var(--px));
+  --inv-topbar-search-height: calc(36 * var(--px));
+  --inv-topbar-search-font-size: calc(12 * var(--px));
+  --inv-topbar-search-font-weight: 500;
+  --inv-topbar-search-text-color: #ffffff;
+  --inv-topbar-search-placeholder-color: #ffffff80;
+  --inv-topbar-search-border-color: #ffffff1a;
+  --inv-topbar-mail-size: calc(36 * var(--px));
+  --inv-topbar-mail-icon-size: calc(20 * var(--px));
+  --inv-topbar-mail-icon-color: #1C92D2;
+  --inv-topbar-mail-border-color: #ffffff1a;
+  --inv-topbar-offset-x: 0px;
+  --inv-topbar-offset-y: 0px;
+  --inv-topbar-left-group-offset-x: 0px;
+  --inv-topbar-left-group-offset-y: 0px;
+  --inv-topbar-right-group-offset-x: 0px;
+  --inv-topbar-right-group-offset-y: 0px;
+  --inv-topbar-category-offset-x: 0px;
+  --inv-topbar-category-offset-y: 0px;
+  --inv-topbar-search-offset-x: 0px;
+  --inv-topbar-search-offset-y: 0px;
+  --inv-topbar-mail-offset-x: 0px;
+  --inv-topbar-mail-offset-y: 0px;
+
+  /* Fastslot positioning */
+  --inv-fastslot-offset-x: 0px;
+  --inv-fastslot-offset-y: 0px;
+  --inv-fastslot-item-offset-x: 0px;
+  --inv-fastslot-item-offset-y: 0px;
+  --inv-fastslot-font-size: calc(12 * var(--px));
+  --inv-fastslot-font-weight: 700;
+  --inv-fastslot-text-color: #ffffff;
+  --inv-fastslot-badge-size: calc(24 * var(--px));
+  --inv-fastslot-badge-font-size: calc(12 * var(--px));
+  --inv-fastslot-badge-font-weight: 700;
+
+  /*
+    Full UI component transform controls
+    ปรับได้ทั้งตำแหน่ง (x/y) และสเกล ต่อคอมโพเนนต์ราย scopeId
+  */
+  --ui-5abd30f8-x: 0px; --ui-5abd30f8-y: 0px; --ui-5abd30f8-scale: 1; /* Topbar */
+  --ui-018cebf4-x: 0px; --ui-018cebf4-y: 0px; --ui-018cebf4-scale: 1; /* Bottombar */
+  --ui-41036f3e-x: 0px; --ui-41036f3e-y: 0px; --ui-41036f3e-scale: 1; /* Fastslot */
+  --ui-9c916ea7-x: 0px; --ui-9c916ea7-y: 0px; --ui-9c916ea7-scale: 1; /* FastslotTab */
+  --ui-241f2623-x: 0px; --ui-241f2623-y: 0px; --ui-241f2623-scale: 1; /* Template dots */
+  --ui-193e3925-x: 0px; --ui-193e3925-y: 0px; --ui-193e3925-scale: 1; /* SecondInventory */
+  --ui-432234f9-x: 0px; --ui-432234f9-y: 0px; --ui-432234f9-scale: 1; /* changeInventory */
+  --ui-ca712028-x: 0px; --ui-ca712028-y: 0px; --ui-ca712028-scale: 1; /* Give item */
+  --ui-3a911819-x: 0px; --ui-3a911819-y: 0px; --ui-3a911819-scale: 1; /* Remove item */
+  --ui-1fcc50c3-x: 0px; --ui-1fcc50c3-y: 0px; --ui-1fcc50c3-scale: 1; /* Mailbox */
+  --ui-b1bb519d-x: 0px; --ui-b1bb519d-y: 0px; --ui-b1bb519d-scale: 1; /* Skinweapon */
+}
+
+/* Main panel */
+.inventory-root {
+  margin-left: var(--inv-root-offset-x) !important;
+  margin-top: var(--inv-root-offset-y) !important;
+}
+.inventory-root .pv\:h-\[800px\] { height: var(--inv-panel-height) !important; }
+.inventory-root .pv\:rounded-\[16px\] { border-radius: var(--inv-panel-radius) !important; }
+
+/* Topbar */
+[data-v-5abd30f8].pv\:w-full.pv\:h-\[36px\] {
+  height: var(--inv-topbar-height) !important;
+  gap: var(--inv-topbar-group-gap) !important;
+  position: relative;
+  left: var(--inv-topbar-offset-x);
+  top: var(--inv-topbar-offset-y);
+}
+
+[data-v-5abd30f8] .pv\:w-auto.pv\:h-full.flex.items-center.pv\:space-x-\[6px\] {
+  position: relative;
+  left: var(--inv-topbar-left-group-offset-x);
+  top: var(--inv-topbar-left-group-offset-y);
+}
+
+[data-v-5abd30f8] .pv\:w-auto.pv\:h-full.flex.pv\:space-x-\[4px\] {
+  position: relative;
+  left: var(--inv-topbar-right-group-offset-x);
+  top: var(--inv-topbar-right-group-offset-y);
+}
+
+/* left icon button */
+[data-v-5abd30f8] .btn.pv\:size-\[34px\] {
+  width: var(--inv-topbar-icon-size) !important;
+  height: var(--inv-topbar-icon-size) !important;
+  border-radius: var(--inv-topbar-icon-radius) !important;
+}
+
+/* title text */
+[data-v-5abd30f8] .text-white.pv\:text-\[px\] {
+  font-size: var(--inv-topbar-title-size) !important;
+  font-weight: var(--inv-topbar-weight) !important;
+  color: var(--inv-topbar-title-color) !important;
+}
+/* fallback in case build emits explicit pixel utility */
+[data-v-5abd30f8] .text-white.pv\:text-\[28px\] {
+  font-size: var(--inv-topbar-title-size) !important;
+  font-weight: var(--inv-topbar-weight) !important;
+  color: var(--inv-topbar-title-color) !important;
+}
+
+/* category button */
+[data-v-5abd30f8] .pv\:text-\[10px\] {
+  font-size: var(--inv-topbar-cat-font-size) !important;
+  font-weight: var(--inv-topbar-cat-font-weight) !important;
+  color: var(--inv-topbar-cat-text-color) !important;
+}
+[data-v-5abd30f8] .pv\:px-\[8px\] {
+  padding-left: var(--inv-topbar-cat-padding-x) !important;
+  padding-right: var(--inv-topbar-cat-padding-x) !important;
+  position: relative;
+  left: var(--inv-topbar-category-offset-x);
+  top: var(--inv-topbar-category-offset-y);
+}
+
+/* search input */
+[data-v-5abd30f8] .pv\:w-\[170px\] {
+  width: var(--inv-topbar-search-width) !important;
+  position: relative;
+  left: var(--inv-topbar-search-offset-x);
+  top: var(--inv-topbar-search-offset-y);
+  font-size: var(--inv-topbar-search-font-size) !important;
+  font-weight: var(--inv-topbar-search-font-weight) !important;
+  color: var(--inv-topbar-search-text-color) !important;
+  border-color: var(--inv-topbar-search-border-color) !important;
+}
+[data-v-5abd30f8] .pv\:w-\[170px\] input {
+  font-size: var(--inv-topbar-search-font-size) !important;
+  font-weight: var(--inv-topbar-search-font-weight) !important;
+  color: var(--inv-topbar-search-text-color) !important;
+}
+[data-v-5abd30f8] input::placeholder {
+  color: var(--inv-topbar-search-placeholder-color) !important;
+}
+[data-v-5abd30f8] .pv\:h-full.bg-\[\#070809\]\/5.pv\:rounded-\[10px\] {
+  height: var(--inv-topbar-search-height) !important;
+}
+
+/* mailbox button */
+[data-v-5abd30f8] .pv\:size-\[36px\] {
+  width: var(--inv-topbar-mail-size) !important;
+  height: var(--inv-topbar-mail-size) !important;
+  position: relative;
+  left: var(--inv-topbar-mail-offset-x);
+  top: var(--inv-topbar-mail-offset-y);
+  border-color: var(--inv-topbar-mail-border-color) !important;
+}
+[data-v-5abd30f8] .pv\:size-\[36px\] .material-symbols-outlined {
+  font-size: var(--inv-topbar-mail-icon-size) !important;
+  color: var(--inv-topbar-mail-icon-color) !important;
+}
+
+/* Fastslot column container */
+[data-v-41036f3e].pv\:w-\[98px\] {
+  width: var(--inv-fastslot-col-width) !important;
+  min-width: var(--inv-fastslot-col-width) !important;
+  max-width: var(--inv-fastslot-col-width) !important;
+  position: relative;
+  left: var(--inv-fastslot-offset-x);
+  top: var(--inv-fastslot-offset-y);
+}
+
+/* Fastslot tile */
+.Fastslot[data-v-41036f3e] {
+  width: var(--inv-fastslot-size) !important;
+  height: var(--inv-fastslot-size) !important;
+  flex: 0 0 var(--inv-fastslot-size) !important;
+  border-radius: var(--inv-slot-radius) !important;
+  position: relative;
+  left: var(--inv-fastslot-item-offset-x);
+  top: var(--inv-fastslot-item-offset-y);
+}
+.Fastslot[data-v-41036f3e] span,
+.Fastslot[data-v-41036f3e] div {
+  font-size: var(--inv-fastslot-font-size) !important;
+  font-weight: var(--inv-fastslot-font-weight) !important;
+  color: var(--inv-fastslot-text-color) !important;
+}
+.Fastslot[data-v-41036f3e] > .absolute {
+  width: var(--inv-fastslot-badge-size) !important;
+  height: var(--inv-fastslot-badge-size) !important;
+}
+.Fastslot[data-v-41036f3e] > .absolute span {
+  font-size: var(--inv-fastslot-badge-font-size) !important;
+  font-weight: var(--inv-fastslot-badge-font-weight) !important;
+}
+
+/* Vertical spacing between fastslots */
+[data-v-41036f3e].pv\:gap-\[10px\] {
+  gap: var(--inv-fastslot-gap) !important;
+}
+
+/* ======================================================
+   Scope-level universal transform controls (all UI blocks)
+   ====================================================== */
+[data-v-5abd30f8] { transform: translate(var(--ui-5abd30f8-x), var(--ui-5abd30f8-y)) scale(var(--ui-5abd30f8-scale)); transform-origin: top left; }
+[data-v-018cebf4] { transform: translate(var(--ui-018cebf4-x), var(--ui-018cebf4-y)) scale(var(--ui-018cebf4-scale)); transform-origin: top left; }
+[data-v-41036f3e] { transform: translate(var(--ui-41036f3e-x), var(--ui-41036f3e-y)) scale(var(--ui-41036f3e-scale)); transform-origin: top left; }
+[data-v-9c916ea7] { transform: translate(var(--ui-9c916ea7-x), var(--ui-9c916ea7-y)) scale(var(--ui-9c916ea7-scale)); transform-origin: top left; }
+[data-v-241f2623] { transform: translate(var(--ui-241f2623-x), var(--ui-241f2623-y)) scale(var(--ui-241f2623-scale)); transform-origin: top left; }
+[data-v-193e3925] { transform: translate(var(--ui-193e3925-x), var(--ui-193e3925-y)) scale(var(--ui-193e3925-scale)); transform-origin: top left; }
+[data-v-432234f9] { transform: translate(var(--ui-432234f9-x), var(--ui-432234f9-y)) scale(var(--ui-432234f9-scale)); transform-origin: top left; }
+[data-v-ca712028] { transform: translate(var(--ui-ca712028-x), var(--ui-ca712028-y)) scale(var(--ui-ca712028-scale)); transform-origin: top left; }
+[data-v-3a911819] { transform: translate(var(--ui-3a911819-x), var(--ui-3a911819-y)) scale(var(--ui-3a911819-scale)); transform-origin: top left; }
+[data-v-1fcc50c3] { transform: translate(var(--ui-1fcc50c3-x), var(--ui-1fcc50c3-y)) scale(var(--ui-1fcc50c3-scale)); transform-origin: top left; }
+[data-v-b1bb519d] { transform: translate(var(--ui-b1bb519d-x), var(--ui-b1bb519d-y)) scale(var(--ui-b1bb519d-scale)); transform-origin: top left; }

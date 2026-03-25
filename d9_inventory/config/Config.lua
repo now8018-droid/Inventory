@@ -24,6 +24,9 @@ Config.Debug = false
 
 Config.OpenControl = 245 -- F2
 
+-- จำนวนช่อง Fast Slot ที่แสดงใน NUI
+Config.MaxFastslot = 7
+
 --- @type string[]
 Config.ExcludeAccountsList = {
     'bank'
