@@ -240,8 +240,28 @@ end)
 RegisterNetEvent("esx_inventoryhud:DelAccessories")
 AddEventHandler("esx_inventoryhud:DelAccessories", function(accessoryLabel)
     local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
     if accessoryLabel ~= 'mask' then
         return
+    end
+
+    if xPlayer then
+        MySQL.Async.fetchScalar('SELECT skin FROM users WHERE identifier = @identifier', {
+            ['@identifier'] = xPlayer.identifier
+        }, function(skinRaw)
+            if not skinRaw then return end
+
+            local ok, skin = pcall(json.decode, skinRaw)
+            if not ok or type(skin) ~= 'table' then return end
+
+            skin.mask_1 = -1
+            skin.mask_2 = 0
+
+            MySQL.Async.execute('UPDATE users SET skin = @skin WHERE identifier = @identifier', {
+                ['@skin'] = json.encode(skin),
+                ['@identifier'] = xPlayer.identifier
+            })
+        end)
     end
 
     TriggerClientEvent("esx_inventoryhud:setmask", src, {

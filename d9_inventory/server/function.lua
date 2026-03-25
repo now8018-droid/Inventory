@@ -2,19 +2,19 @@
 RegisterNetEvent("esx_inventoryhud:tradePlayerItem")
 AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType, itemName, count, tradeType)
     local src = source
-    local xPlayer = ESX.GetPlayerFromId(from)
+    local xPlayer = ESX.GetPlayerFromId(src)
     local xTarget = ESX.GetPlayerFromId(to)
     
     if not xPlayer or not xTarget then return end
     
     -- ตรวจสอบการโกง
-    if src ~= from then
+    if from and src ~= from then
         print(('^1[ANTICHEAT] %s พยายามโกงการโอนไอเทม'):format(GetPlayerName(src)))
         return
     end
     
     -- ตรวจสอบระยะทาง
-    if #(GetEntityCoords(GetPlayerPed(from)) - GetEntityCoords(GetPlayerPed(to))) > 5.0 then
+    if #(GetEntityCoords(GetPlayerPed(src)) - GetEntityCoords(GetPlayerPed(to))) > 5.0 then
         return
     end
     
@@ -28,7 +28,7 @@ AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType,
             
             -- Log การโอน
             print(('^3[TRADE] %s ให้ %s จำนวน %s %s'):format(
-                GetPlayerName(from), GetPlayerName(to), count, itemName
+                GetPlayerName(src), GetPlayerName(to), count, itemName
             ))
         end
     elseif itemType == 'item_weapon' then
@@ -45,6 +45,7 @@ RegisterNetEvent(GetName('sv','SearchPlayer'))
 AddEventHandler(GetName('sv','SearchPlayer'), function(SecondName, Typename, Action, items, count, job, SearchData)
     local src = source
     local xPlayer = ESX.GetPlayerFromId(src)
+    if not SearchData or not SearchData.id then return end
     local xTarget = ESX.GetPlayerFromId(SearchData.id)
     
     if not xPlayer or not xTarget then return end

@@ -110,9 +110,17 @@ function Client:InitRegis()
 		Client:UpdateInventory()
 	end)
 
-	RegisEvent("esx_inventoryhud:setmask", function(skin)
-		self.Accessories.mask = skin
-	end)
+		RegisEvent("esx_inventoryhud:setmask", function(skin)
+			if type(skin) == "table" then
+				self.Accessories.mask = json.encode({
+					mask_1 = skin.mask_1 or -1,
+					mask_2 = skin.mask_2 or 0,
+				})
+			else
+				self.Accessories.mask = skin
+			end
+			Client:UpdateInventory()
+		end)
 
 	RegisEvent("wonder_invnetory:updatekey", function(skin)
 		Client:GetVehicle()

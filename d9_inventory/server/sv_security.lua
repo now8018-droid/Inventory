@@ -80,12 +80,21 @@ end
 
 -- ตรวจสอบน้ำหนัก
 function Security.CheckWeight(xPlayer, itemName, count)
-    -- ต้องปรับให้เข้ากับระบบน้ำหนักของคุณ
-    -- สมมติใช้ระบบ ESX เดิม
-    local currentWeight = exports.es_extended:GetTotalWeight(xPlayer.identifier)
-    local itemWeight = ESX.GetItemWeight(itemName)
-    local maxWeight = ESX.GetConfig().MaxWeight
-    
+    if xPlayer.canCarryItem then
+        return xPlayer.canCarryItem(itemName, count)
+    end
+
+    local okWeight, currentWeight = pcall(function()
+        return exports.es_extended:GetTotalWeight(xPlayer.identifier)
+    end)
+
+    if not okWeight then
+        -- fallback: ถ้าระบบน้ำหนักไม่พร้อม ไม่ block เพื่อป้องกัน script พังทั้ง flow
+        return true
+    end
+
+    local itemWeight = ESX.GetItemWeight(itemName) or 0
+    local maxWeight = ESX.GetConfig().MaxWeight or 0
     return (currentWeight + (itemWeight * count)) <= maxWeight
 end
 
