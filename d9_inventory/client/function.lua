@@ -135,7 +135,11 @@ end)
 function model:CloseInventiry()
 	print('CloseInventiry')
 
-	exports.d9_trunk:LeaveTrunk()
+	if GetResourceState("d9_trunk") == "started" then
+		pcall(function()
+			exports.d9_trunk:LeaveTrunk()
+		end)
+	end
 
 	TriggerScreenblurFadeOut(100)
 	Eventnui("closeInventory", {})
