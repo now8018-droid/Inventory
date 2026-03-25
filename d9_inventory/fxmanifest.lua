@@ -55,6 +55,7 @@ ui_page {
 
 files {
     'web/dist/**',
+    'web/src/**',
     'web/image/**',
     --'web/sound/**',
 }
