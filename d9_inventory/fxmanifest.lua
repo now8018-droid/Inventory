@@ -37,10 +37,10 @@ client_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'config/ServerConfig.lua',
+    'server/Init.lua',
     'server/function.lua',
     'server/Skinweapon.lua',
     'server/ServerFunction.lua',
-    'server/Init.lua',
     'server/sv_keys.lua',
     'server/sv_security.lua',
     'server/sv_skins.lua',
