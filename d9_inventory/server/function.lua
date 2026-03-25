@@ -1,3 +1,6 @@
+local TRADE_DISTANCE_LIMIT = (Config and Config.DistanceGive) or 3.0
+local SEARCH_DISTANCE_LIMIT = 5.0
+
 local function isWithinDistance(fromSource, toSource, maxDistance)
     local fromPed = GetPlayerPed(fromSource)
     local toPed = GetPlayerPed(toSource)
@@ -18,7 +21,7 @@ local function canSearchTarget(xPlayer, xTarget, typeName)
         return false
     end
 
-    return isWithinDistance(xPlayer.source, xTarget.source, 5.0)
+    return isWithinDistance(xPlayer.source, xTarget.source, SEARCH_DISTANCE_LIMIT)
 end
 
 -- ตรวจสอบการโอนไอเทมระหว่างผู้เล่น
@@ -35,7 +38,7 @@ AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType,
     end
     
     -- ตรวจสอบระยะทาง
-    if #(GetEntityCoords(GetPlayerPed(src)) - GetEntityCoords(GetPlayerPed(to))) > 5.0 then
+    if #(GetEntityCoords(GetPlayerPed(src)) - GetEntityCoords(GetPlayerPed(to))) > TRADE_DISTANCE_LIMIT then
         return
     end
     

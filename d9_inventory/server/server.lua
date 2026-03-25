@@ -1,5 +1,7 @@
 Server = {}
 ESX = ESX or exports["es_extended"]:getSharedObject()
+local TRANSFER_MAX_DISTANCE = (Config and Config.DistanceGive) or 3.0
+local TRANSFER_MAX_AMOUNT = (ServerConfig and ServerConfig.Restrictions and ServerConfig.Restrictions.MaxItemTransfer) or 1000
 
 local function notifyPlayer(xPlayer, message)
     if xPlayer and xPlayer.showNotification then
@@ -39,7 +41,11 @@ local function validateTransfer(source, target, itemType, itemName, amount)
         return false, 'INVALID_AMOUNT'
     end
 
-    if getDistanceBetweenPlayers(source, target) > Config.DistanceGive then
+    if amount > TRANSFER_MAX_AMOUNT then
+        return false, 'AMOUNT_EXCEEDED'
+    end
+
+    if getDistanceBetweenPlayers(source, target) > TRANSFER_MAX_DISTANCE then
         return false, 'DISTANCE'
     end
 
@@ -172,6 +178,8 @@ function ProcessInventoryTransfer(source, target, itemType, itemName, amount, cu
             notifyPlayer(xPlayer, '~r~ผู้เล่นอยู่ไกลเกินไป')
         elseif amountOrReason == 'INVALID_AMOUNT' then
             notifyPlayer(xPlayer, '~r~จำนวนไอเทมไม่ถูกต้อง')
+        elseif amountOrReason == 'AMOUNT_EXCEEDED' then
+            notifyPlayer(xPlayer, ('~r~จำนวนสูงสุดต่อครั้งคือ %s'):format(TRANSFER_MAX_AMOUNT))
         end
         return false
     end
