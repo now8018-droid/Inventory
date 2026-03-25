@@ -1,66 +1,48 @@
 <script setup>
-import { computed, ref } from 'vue'
-import InventoryHeader from './components/InventoryHeader.vue'
-import InventoryGrid from './components/InventoryGrid.vue'
-import ItemDetail from './components/ItemDetail.vue'
-import { useInventoryStore } from './stores/inventory'
+import { computed } from 'vue'
+import SystemMenu from './components/SystemMenu.vue'
+import SystemOverview from './components/SystemOverview.vue'
+import InventorySystem from './systems/InventorySystem.vue'
+import StatusSystem from './systems/StatusSystem.vue'
+import GarageSystem from './systems/GarageSystem.vue'
+import MissionsSystem from './systems/MissionsSystem.vue'
+import EconomySystem from './systems/EconomySystem.vue'
+import AdminSystem from './systems/AdminSystem.vue'
+import { useMockSystems } from './composables/useMockSystems'
 
-const store = useInventoryStore()
-const query = ref('')
-const activeCategory = ref('all')
+const store = useMockSystems()
 
-const categories = computed(() => ['all', ...store.categories])
+const viewMap = {
+  inventory: InventorySystem,
+  status: StatusSystem,
+  garage: GarageSystem,
+  missions: MissionsSystem,
+  economy: EconomySystem,
+  admin: AdminSystem,
+}
 
-const filteredItems = computed(() => {
-  const keyword = query.value.trim().toLowerCase()
-
-  return store.items.filter((item) => {
-    const categoryMatch =
-      activeCategory.value === 'all' || item.category === activeCategory.value
-
-    const keywordMatch =
-      keyword.length === 0 ||
-      item.label.toLowerCase().includes(keyword) ||
-      item.description.toLowerCase().includes(keyword)
-
-    return categoryMatch && keywordMatch
-  })
-})
-
-const capacityPercent = computed(() =>
-  Math.min(100, Math.round((store.usedSlots / store.maxSlots) * 100)),
-)
+const activeView = computed(() => viewMap[store.activeSystem] ?? InventorySystem)
 </script>
 
 <template>
-  <main class="inventory-layout">
-    <section class="inventory-panel">
-      <InventoryHeader
-        v-model:query="query"
-        :money="store.money"
-        :weight="store.totalWeight"
-        :capacity-percent="capacityPercent"
-      />
+  <main class="app-shell">
+    <SystemMenu
+      :systems="store.systems"
+      :active-system="store.activeSystem"
+      @select="store.setActiveSystem"
+    />
 
-      <div class="chip-row">
-        <button
-          v-for="category in categories"
-          :key="category"
-          class="chip"
-          :class="{ active: category === activeCategory }"
-          @click="activeCategory = category"
-        >
-          {{ category }}
-        </button>
-      </div>
+    <section class="workspace">
+      <SystemOverview :metrics="store.metrics" :player="store.player" />
 
-      <InventoryGrid
-        :items="filteredItems"
-        :selected-id="store.selectedId"
-        @select="store.selectItem"
-      />
+      <section class="system-frame">
+        <header class="system-header">
+          <h1>{{ store.currentSystem.label }}</h1>
+          <p>{{ store.currentSystem.description }}</p>
+        </header>
+
+        <component :is="activeView" :store="store" />
+      </section>
     </section>
-
-    <ItemDetail :item="store.selectedItem" @consume="store.consumeItem" />
   </main>
 </template>
