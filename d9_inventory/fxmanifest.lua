@@ -37,6 +37,7 @@ client_scripts {
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
     'config/ServerConfig.lua',
+    'config/TransferPolicy.lua',
     'server/Init.lua',
     'server/function.lua',
     'server/Skinweapon.lua',

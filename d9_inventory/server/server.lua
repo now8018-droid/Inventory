@@ -1,26 +1,11 @@
 Server = {}
 ESX = ESX or exports["es_extended"]:getSharedObject()
-local TRANSFER_MAX_DISTANCE = (Config and Config.DistanceGive) or 3.0
-local TRANSFER_MAX_AMOUNT = (ServerConfig and ServerConfig.Restrictions and ServerConfig.Restrictions.MaxItemTransfer) or 1000
-local MSG = {
-    TOO_FAR = '~r~ผู้เล่นอยู่ไกลเกินไป',
-    INVALID_AMOUNT = '~r~จำนวนไอเทมไม่ถูกต้อง',
-    AMOUNT_EXCEEDED = '~r~จำนวนสูงสุดต่อครั้งคือ %s',
-    NOT_ENOUGH_ITEM = '~r~คุณมีไอเทมไม่เพียงพอ',
-    GIVE_ITEM_OK = '~g~ให้ไอเทมสำเร็จ',
-    RECEIVE_ITEM = '~g~ได้รับไอเทมจาก %s',
-    NOT_ENOUGH_MONEY = '~r~เงินสดไม่เพียงพอ',
-    GIVE_MONEY_OK = '~g~ให้เงินสดสำเร็จ',
-    RECEIVE_MONEY = '~g~ได้รับเงินสดจาก %s',
-    NOT_ENOUGH_BLACK_MONEY = '~r~เงินดำไม่เพียงพอ',
-    GIVE_BLACK_MONEY_OK = '~g~ให้เงินดำสำเร็จ',
-    RECEIVE_BLACK_MONEY = '~g~ได้รับเงินดำจาก %s',
-    NO_WEAPON = '~r~คุณไม่มีอาวุธชิ้นนี้',
-    GIVE_WEAPON_OK = '~g~ให้อาวุธสำเร็จ',
-    RECEIVE_WEAPON = '~g~ได้รับอาวุธจาก %s',
-    NO_PLATE = '~r~ไม่พบข้อมูลป้ายทะเบียนรถ',
-    WELFARE_BLOCK = '~r~รถคันนี้ไม่สามารถเทรดผ่าน Trade Car Welfare ได้',
-}
+local POLICY = TransferPolicy or {}
+local POLICY_LIMITS = POLICY.limits or {}
+local TRANSFER_MAX_DISTANCE = POLICY_LIMITS.max_distance or (Config and Config.DistanceGive) or 3.0
+local TRANSFER_MAX_AMOUNT = POLICY_LIMITS.max_amount or (ServerConfig and ServerConfig.Restrictions and ServerConfig.Restrictions.MaxItemTransfer) or 1000
+local MSG = POLICY.messages or {}
+local ACTION_LABELS = POLICY.actions or {}
 local TRANSFER_ERROR_MESSAGE = {
     DISTANCE = function()
         return MSG.TOO_FAR
@@ -42,7 +27,7 @@ end
 
 local function logTransfer(actionType, sourceId, targetId, itemName, amount, outcome)
     local policy = TRANSFER_POLICY[actionType]
-    local actionLabel = (policy and policy.label) or tostring(actionType or "UNKNOWN")
+    local actionLabel = (policy and policy.label) or ACTION_LABELS[actionType] or tostring(actionType or "UNKNOWN")
     local sourceName = GetPlayerName(sourceId) or ("src:%s"):format(sourceId or "nil")
     local targetName = GetPlayerName(targetId) or ("tgt:%s"):format(targetId or "nil")
     print(('[TRANSFER][%s][%s] %s -> %s | %s x%s'):format(
@@ -215,25 +200,25 @@ end
 
 TRANSFER_POLICY = {
     item_standard = {
-        label = "ITEM",
+        label = ACTION_LABELS.item_standard or "ITEM",
         execute = function(xPlayer, xTarget, itemName, amount)
             transferStandardItem(xPlayer, xTarget, itemName, amount)
         end
     },
     item_account = {
-        label = "ACCOUNT",
+        label = ACTION_LABELS.item_account or "ACCOUNT",
         execute = function(xPlayer, xTarget, itemName, amount)
             transferAccountMoney(xPlayer, xTarget, itemName, amount)
         end
     },
     item_weapon = {
-        label = "WEAPON",
+        label = ACTION_LABELS.item_weapon or "WEAPON",
         execute = function(xPlayer, xTarget, itemName)
             transferWeapon(xPlayer, xTarget, itemName)
         end
     },
     item_key = {
-        label = "VEHICLE_KEY",
+        label = ACTION_LABELS.item_key or "VEHICLE_KEY",
         execute = function(xPlayer, xTarget, itemName, amount, customData, isWelfare)
             transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
         end
