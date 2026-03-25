@@ -193,8 +193,10 @@ function Client:GetmyInventory()
 	
 	-- Pre-build fastWeapons lookup table for O(1) access
 	local fastWeaponsLookup = {}
-	for slot, item in pairs(self.fastWeapons) do
-		fastWeaponsLookup[item.name] = slot
+	for slot, item in pairs(self.fastWeapons or {}) do
+		if type(item) == "table" and type(item.name) == "string" and item.name ~= "" then
+			fastWeaponsLookup[item.name] = slot
+		end
 	end
 
 	-- Process accounts
@@ -718,9 +720,18 @@ end
 function Client:UpdateFastslot()
 	local tablefast = {}
 	local playerPed = PlayerPedId()
+	if type(self.fastWeapons) ~= "table" then
+		self.fastWeapons = {}
+	end
+
 	for k, v in pairs(self.fastWeapons) do
+		if type(v) ~= "table" or type(v.name) ~= "string" or v.name == "" then
+			self.fastWeapons[k] = nil
+			goto continue_fastslot
+		end
+
 		v.slot = k
-		if string.find(v.name, "WEAPON_", 1) == nil and string.find(v.name, "weapon_", 1) == nil then
+		if string.find(v.name, "WEAPON_", 1, true) == nil and string.find(v.name, "weapon_", 1, true) == nil then
 			if model:checkItemCount(v.name) > 0 then
 				v.count = model:checkItemCount(v.name)
 				table.insert(tablefast, v)
@@ -731,6 +742,7 @@ function Client:UpdateFastslot()
 				table.insert(tablefast, v)
 			end
 		end
+		::continue_fastslot::
 	end
 	
 	self.allfastslot[tonumber(self.selectfastslot)] = self.fastWeapons
