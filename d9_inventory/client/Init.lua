@@ -724,8 +724,11 @@ function Client:LoopInit()
 
 	Citizen.CreateThread(function()
 		while true do
-			Citizen.Wait(4)
-			if not IsPlayerDead(PlayerPedId()) and not IsDead then
+			local sleep = 250
+			local ped = PlayerPedId()
+			local isAlive = not IsPlayerDead(ped) and not IsDead
+			if isAlive then
+				sleep = 0
 				DisableControlAction(0, 37, true)
 
 				if IsControlPressed(0, 19) or UpdateOnscreenKeyboard() == 0 then
@@ -869,6 +872,7 @@ function Client:LoopInit()
 
 				::back::
 			end
+			Citizen.Wait(sleep)
 		end
 	end)
 end
@@ -882,6 +886,7 @@ function Client:InitWeapon()
 	local IsSetWeapon = false
 	local varweapon = nil
 	local blockat = false
+	local blockatThreadRunning = false
 
 	function loadAnimDict(dict)
 		while not HasAnimDictLoaded(dict) do
@@ -892,9 +897,13 @@ function Client:InitWeapon()
 
 	blockatk = function()
 		blockat = true
+		if blockatThreadRunning then
+			return
+		end
+		blockatThreadRunning = true
 		Citizen.CreateThread(function()
 			while true do
-				Citizen.Wait(1)
+				Citizen.Wait(0)
 				if blockat then
 					if IsControlJustReleased(0, 24) or IsControlJustReleased(0, 45) then
 						if GetSelectedPedWeapon(PlayerPedId()) == GetHashKey("WEAPON_UNARMED") then
@@ -912,10 +921,9 @@ function Client:InitWeapon()
 					DisableControlAction(0, 45, true) -- Attack
 					DisableControlAction(0, 257, true) -- Attack 2
 				else
+					blockatThreadRunning = false
 					break
 				end
-
-
 			end
 		end)
 	end
