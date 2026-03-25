@@ -2,6 +2,25 @@ Server = {}
 ESX = ESX or exports["es_extended"]:getSharedObject()
 local TRANSFER_MAX_DISTANCE = (Config and Config.DistanceGive) or 3.0
 local TRANSFER_MAX_AMOUNT = (ServerConfig and ServerConfig.Restrictions and ServerConfig.Restrictions.MaxItemTransfer) or 1000
+local MSG = {
+    TOO_FAR = '~r~ผู้เล่นอยู่ไกลเกินไป',
+    INVALID_AMOUNT = '~r~จำนวนไอเทมไม่ถูกต้อง',
+    AMOUNT_EXCEEDED = '~r~จำนวนสูงสุดต่อครั้งคือ %s',
+    NOT_ENOUGH_ITEM = '~r~คุณมีไอเทมไม่เพียงพอ',
+    GIVE_ITEM_OK = '~g~ให้ไอเทมสำเร็จ',
+    RECEIVE_ITEM = '~g~ได้รับไอเทมจาก %s',
+    NOT_ENOUGH_MONEY = '~r~เงินสดไม่เพียงพอ',
+    GIVE_MONEY_OK = '~g~ให้เงินสดสำเร็จ',
+    RECEIVE_MONEY = '~g~ได้รับเงินสดจาก %s',
+    NOT_ENOUGH_BLACK_MONEY = '~r~เงินดำไม่เพียงพอ',
+    GIVE_BLACK_MONEY_OK = '~g~ให้เงินดำสำเร็จ',
+    RECEIVE_BLACK_MONEY = '~g~ได้รับเงินดำจาก %s',
+    NO_WEAPON = '~r~คุณไม่มีอาวุธชิ้นนี้',
+    GIVE_WEAPON_OK = '~g~ให้อาวุธสำเร็จ',
+    RECEIVE_WEAPON = '~g~ได้รับอาวุธจาก %s',
+    NO_PLATE = '~r~ไม่พบข้อมูลป้ายทะเบียนรถ',
+    WELFARE_BLOCK = '~r~รถคันนี้ไม่สามารถเทรดผ่าน Trade Car Welfare ได้',
+}
 
 local function notifyPlayer(xPlayer, message)
     if xPlayer and xPlayer.showNotification then
@@ -61,45 +80,45 @@ end
 local function transferStandardItem(xPlayer, xTarget, itemName, amount)
     local item = xPlayer.getInventoryItem(itemName)
     if not item or item.count < amount then
-        notifyPlayer(xPlayer, '~r~คุณมีไอเทมไม่เพียงพอ')
+        notifyPlayer(xPlayer, MSG.NOT_ENOUGH_ITEM)
         return
     end
 
     xPlayer.removeInventoryItem(itemName, amount)
     xTarget.addInventoryItem(itemName, amount)
-    notifyPlayer(xPlayer, '~g~ให้ไอเทมสำเร็จ')
-    notifyPlayer(xTarget, ('~g~ได้รับไอเทมจาก %s'):format(GetPlayerName(xPlayer.source)))
+    notifyPlayer(xPlayer, MSG.GIVE_ITEM_OK)
+    notifyPlayer(xTarget, MSG.RECEIVE_ITEM:format(GetPlayerName(xPlayer.source)))
 end
 
 local function transferAccountMoney(xPlayer, xTarget, itemName, amount)
     if itemName == 'money' then
         if xPlayer.getMoney() < amount then
-            notifyPlayer(xPlayer, '~r~เงินสดไม่เพียงพอ')
+            notifyPlayer(xPlayer, MSG.NOT_ENOUGH_MONEY)
             return
         end
         xPlayer.removeMoney(amount)
         xTarget.addMoney(amount)
-        notifyPlayer(xPlayer, '~g~ให้เงินสดสำเร็จ')
-        notifyPlayer(xTarget, ('~g~ได้รับเงินสดจาก %s'):format(GetPlayerName(xPlayer.source)))
+        notifyPlayer(xPlayer, MSG.GIVE_MONEY_OK)
+        notifyPlayer(xTarget, MSG.RECEIVE_MONEY:format(GetPlayerName(xPlayer.source)))
         return
     end
 
     if itemName == 'black_money' then
         local account = xPlayer.getAccount('black_money')
         if not account or account.money < amount then
-            notifyPlayer(xPlayer, '~r~เงินดำไม่เพียงพอ')
+            notifyPlayer(xPlayer, MSG.NOT_ENOUGH_BLACK_MONEY)
             return
         end
         xPlayer.removeAccountMoney('black_money', amount)
         xTarget.addAccountMoney('black_money', amount)
-        notifyPlayer(xPlayer, '~g~ให้เงินดำสำเร็จ')
-        notifyPlayer(xTarget, ('~g~ได้รับเงินดำจาก %s'):format(GetPlayerName(xPlayer.source)))
+        notifyPlayer(xPlayer, MSG.GIVE_BLACK_MONEY_OK)
+        notifyPlayer(xTarget, MSG.RECEIVE_BLACK_MONEY:format(GetPlayerName(xPlayer.source)))
     end
 end
 
 local function transferWeapon(xPlayer, xTarget, itemName)
     if not xPlayer.hasWeapon(itemName) then
-        notifyPlayer(xPlayer, '~r~คุณไม่มีอาวุธชิ้นนี้')
+        notifyPlayer(xPlayer, MSG.NO_WEAPON)
         return
     end
 
@@ -108,18 +127,18 @@ local function transferWeapon(xPlayer, xTarget, itemName)
     xPlayer.removeWeapon(itemName)
     xTarget.addWeapon(itemName, weaponAmmo)
 
-    notifyPlayer(xPlayer, '~g~ให้อาวุธสำเร็จ')
-    notifyPlayer(xTarget, ('~g~ได้รับอาวุธจาก %s'):format(GetPlayerName(xPlayer.source)))
+    notifyPlayer(xPlayer, MSG.GIVE_WEAPON_OK)
+    notifyPlayer(xTarget, MSG.RECEIVE_WEAPON:format(GetPlayerName(xPlayer.source)))
 end
 
 local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
     if not plate or plate == '' then
-        notifyPlayer(xPlayer, '~r~ไม่พบข้อมูลป้ายทะเบียนรถ')
+        notifyPlayer(xPlayer, MSG.NO_PLATE)
         return
     end
 
     if isWelfare == false then
-        notifyPlayer(xPlayer, '~r~รถคันนี้ไม่สามารถเทรดผ่าน Trade Car Welfare ได้')
+        notifyPlayer(xPlayer, MSG.WELFARE_BLOCK)
         return
     end
 
@@ -175,11 +194,11 @@ function ProcessInventoryTransfer(source, target, itemType, itemName, amount, cu
     local isValid, amountOrReason, xPlayer, xTarget = validateTransfer(source, target, itemType, itemName, amount)
     if not isValid then
         if amountOrReason == 'DISTANCE' then
-            notifyPlayer(xPlayer, '~r~ผู้เล่นอยู่ไกลเกินไป')
+            notifyPlayer(xPlayer, MSG.TOO_FAR)
         elseif amountOrReason == 'INVALID_AMOUNT' then
-            notifyPlayer(xPlayer, '~r~จำนวนไอเทมไม่ถูกต้อง')
+            notifyPlayer(xPlayer, MSG.INVALID_AMOUNT)
         elseif amountOrReason == 'AMOUNT_EXCEEDED' then
-            notifyPlayer(xPlayer, ('~r~จำนวนสูงสุดต่อครั้งคือ %s'):format(TRANSFER_MAX_AMOUNT))
+            notifyPlayer(xPlayer, MSG.AMOUNT_EXCEEDED:format(TRANSFER_MAX_AMOUNT))
         end
         return false
     end
