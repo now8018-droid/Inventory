@@ -11,17 +11,11 @@ Client = {
 
 	meleeatk = false,
 
-	GetVehicle = function()
-		local result = lib.callback.await(GetName("callback", "Vehicle"))
-		KeyVehicle = result
-		return KeyVehicle
-	end,
-
 }
 
 function Client:GetAccessories()
 	local result = lib.callback.await(GetName("callback", "Accessories"))
-	self.Accessories.mask = result
+	self.Accessories = result or {}
 	return self.Accessories
 end
 
@@ -45,6 +39,30 @@ end
 RegisterNetEvent("esx_inventoryhud:GetVehicleKey")
 AddEventHandler("esx_inventoryhud:GetVehicleKey", function()
 	Client:GetVehicle()
+end)
+
+RegisterNetEvent("d9_inventory:lockVehicle")
+AddEventHandler("d9_inventory:lockVehicle", function(plate)
+	local ped = PlayerPedId()
+	local coords = GetEntityCoords(ped)
+	local vehicle = ESX.Game.GetClosestVehicle(coords)
+
+	if vehicle == 0 then
+		ESX.ShowNotification("~r~ไม่พบรถใกล้ตัว")
+		return
+	end
+
+	local vehiclePlate = ESX.Math.Trim(GetVehicleNumberPlateText(vehicle))
+	if vehiclePlate ~= ESX.Math.Trim(plate or "") then
+		ESX.ShowNotification("~r~คุณไม่ได้อยู่ใกล้รถทะเบียนนี้")
+		return
+	end
+
+	local isLocked = GetVehicleDoorLockStatus(vehicle) == 2
+	SetVehicleDoorsLocked(vehicle, isLocked and 1 or 2)
+	SetVehicleDoorsLockedForAllPlayers(vehicle, not isLocked)
+	PlayVehicleDoorCloseSound(vehicle, 1)
+	ESX.ShowNotification(isLocked and "~g~ปลดล็อครถแล้ว" or "~y~ล็อครถแล้ว")
 end)
 
 local updateDebounce = nil

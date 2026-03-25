@@ -1,6 +1,6 @@
 ESX = exports["es_extended"]:getSharedObject()
 
-local Security = {
+Security = {
     cooldowns = {},
     transfers = {}
 }
@@ -156,17 +156,6 @@ function Security.TakeAction(source, reason, details)
     -- Kick ผู้เล่น
     DropPlayer(source, "Anti-Cheat: " .. reason)
 end
-
--- นำ Security System ไปใช้ใน Event ต่างๆ
-AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, amount)
-    local src = source
-    
-    if not Security.ValidateTransfer(src, target, itemType, itemName, amount) then
-        return
-    end
-    
-    -- โอนไอเทมตามปกติ...
-end)
 
 -- สแกนผู้เล่นทุก 5 นาที
 Citizen.CreateThread(function()

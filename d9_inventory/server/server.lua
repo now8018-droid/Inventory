@@ -1,97 +1,251 @@
 Server = {}
+ESX = ESX or exports["es_extended"]:getSharedObject()
 
--- Event พื้นฐาน
-RegisterNetEvent("esx:playerLoaded")
-AddEventHandler("esx:playerLoaded", function(playerId, xPlayer)
-    TriggerClientEvent("esx_inventoryhud:getOwnerVehicle", playerId)
-    TriggerClientEvent("esx_inventoryhud:getOwnerAccessories", playerId)
-end)
+local function notifyPlayer(xPlayer, message)
+    if xPlayer and xPlayer.showNotification then
+        xPlayer.showNotification(message)
+    end
+end
 
--- รับไอเทมจากผู้เล่นอื่น
-RegisterNetEvent(GetName("sv", "giveItem"))
-AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, amount, customData)
-    local source = source
+local function getDistanceBetweenPlayers(source, target)
+    local srcPed = GetPlayerPed(source)
+    local targetPed = GetPlayerPed(target)
+
+    if srcPed <= 0 or targetPed <= 0 then
+        return math.huge
+    end
+
+    return #(GetEntityCoords(srcPed) - GetEntityCoords(targetPed))
+end
+
+local function validateTransfer(source, target, itemType, itemName, amount)
     local xPlayer = ESX.GetPlayerFromId(source)
     local xTarget = ESX.GetPlayerFromId(target)
-    
-    if not xPlayer or not xTarget then return end
-    
-    -- ตรวจสอบระยะทาง
-    if #(GetEntityCoords(GetPlayerPed(source)) - GetEntityCoords(GetPlayerPed(target))) > 10.0 then
-        xPlayer.showNotification('~r~ผู้เล่นอยู่ไกลเกินไป')
+
+    if not xPlayer or not xTarget then
+        return false, 'INVALID_PLAYER'
+    end
+
+    if source == target then
+        return false, 'SELF_TRANSFER'
+    end
+
+    if type(amount) ~= 'number' then
+        amount = tonumber(amount) or 0
+    end
+
+    amount = ESX.Math.Round(amount)
+    if amount < 1 then
+        return false, 'INVALID_AMOUNT'
+    end
+
+    if getDistanceBetweenPlayers(source, target) > Config.DistanceGive then
+        return false, 'DISTANCE'
+    end
+
+    if Security and Security.ValidateTransfer then
+        if not Security.ValidateTransfer(source, target, itemType, itemName, amount) then
+            return false, 'SECURITY_BLOCK'
+        end
+    end
+
+    return true, amount, xPlayer, xTarget
+end
+
+local function transferStandardItem(xPlayer, xTarget, itemName, amount)
+    local item = xPlayer.getInventoryItem(itemName)
+    if not item or item.count < amount then
+        notifyPlayer(xPlayer, '~r~คุณมีไอเทมไม่เพียงพอ')
         return
     end
-    
-    amount = ESX.Math.Round(amount)
-    
-    if itemType == 'item_standard' then
-        local item = xPlayer.getInventoryItem(itemName)
-        if item.count >= amount then
-            xPlayer.removeInventoryItem(itemName, amount)
-            xTarget.addInventoryItem(itemName, amount)
-            xPlayer.showNotification('~g~ให้ไอเทมสำเร็จ')
-            xTarget.showNotification('~g~ได้รับไอเทมจาก ' .. GetPlayerName(source))
-        else
-            xPlayer.showNotification('~r~คุณมีไอเทมไม่เพียงพอ')
-        end
-    elseif itemType == 'item_account' then
-        if itemName == 'money' then
-            if xPlayer.getMoney() >= amount then
-                xPlayer.removeMoney(amount)
-                xTarget.addMoney(amount)
-                xPlayer.showNotification('~g~ให้เงินสำเร็จ')
-                xTarget.showNotification('~g~ได้รับเงินจาก ' .. GetPlayerName(source))
-            end
-        elseif itemName == 'black_money' then
-            if xPlayer.getAccount('black_money').money >= amount then
-                xPlayer.removeAccountMoney('black_money', amount)
-                xTarget.addAccountMoney('black_money', amount)
-                xPlayer.showNotification('~g~ให้เงินดำสำเร็จ')
-                xTarget.showNotification('~g~ได้รับเงินดำจาก ' .. GetPlayerName(source))
-            end
-        end
-    elseif itemType == 'item_weapon' then
-        if xPlayer.hasWeapon(itemName) then
-            local weaponAmmo = xPlayer.getWeapon(itemName).ammo or 0
-            xPlayer.removeWeapon(itemName)
-            xTarget.addWeapon(itemName, weaponAmmo)
-            xPlayer.showNotification('~g~ให้อาวุธสำเร็จ')
-            xTarget.showNotification('~g~ได้รับอาวุธจาก ' .. GetPlayerName(source))
-        end
-    end
-end)
 
--- ค้นหาข้อมูลผู้เล่น
-ESX.RegisterServerCallback(GetName("sv", "getPlayerInventory"), function(source, cb, target)
+    xPlayer.removeInventoryItem(itemName, amount)
+    xTarget.addInventoryItem(itemName, amount)
+    notifyPlayer(xPlayer, '~g~ให้ไอเทมสำเร็จ')
+    notifyPlayer(xTarget, ('~g~ได้รับไอเทมจาก %s'):format(GetPlayerName(xPlayer.source)))
+end
+
+local function transferAccountMoney(xPlayer, xTarget, itemName, amount)
+    if itemName == 'money' then
+        if xPlayer.getMoney() < amount then
+            notifyPlayer(xPlayer, '~r~เงินสดไม่เพียงพอ')
+            return
+        end
+        xPlayer.removeMoney(amount)
+        xTarget.addMoney(amount)
+        notifyPlayer(xPlayer, '~g~ให้เงินสดสำเร็จ')
+        notifyPlayer(xTarget, ('~g~ได้รับเงินสดจาก %s'):format(GetPlayerName(xPlayer.source)))
+        return
+    end
+
+    if itemName == 'black_money' then
+        local account = xPlayer.getAccount('black_money')
+        if not account or account.money < amount then
+            notifyPlayer(xPlayer, '~r~เงินดำไม่เพียงพอ')
+            return
+        end
+        xPlayer.removeAccountMoney('black_money', amount)
+        xTarget.addAccountMoney('black_money', amount)
+        notifyPlayer(xPlayer, '~g~ให้เงินดำสำเร็จ')
+        notifyPlayer(xTarget, ('~g~ได้รับเงินดำจาก %s'):format(GetPlayerName(xPlayer.source)))
+    end
+end
+
+local function transferWeapon(xPlayer, xTarget, itemName)
+    if not xPlayer.hasWeapon(itemName) then
+        notifyPlayer(xPlayer, '~r~คุณไม่มีอาวุธชิ้นนี้')
+        return
+    end
+
+    local weaponData = xPlayer.getWeapon(itemName) or {}
+    local weaponAmmo = weaponData.ammo or 0
+    xPlayer.removeWeapon(itemName)
+    xTarget.addWeapon(itemName, weaponAmmo)
+
+    notifyPlayer(xPlayer, '~g~ให้อาวุธสำเร็จ')
+    notifyPlayer(xTarget, ('~g~ได้รับอาวุธจาก %s'):format(GetPlayerName(xPlayer.source)))
+end
+
+local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
+    if not plate or plate == '' then
+        notifyPlayer(xPlayer, '~r~ไม่พบข้อมูลป้ายทะเบียนรถ')
+        return
+    end
+
+    if isWelfare == false then
+        notifyPlayer(xPlayer, '~r~รถคันนี้ไม่สามารถเทรดผ่าน Trade Car Welfare ได้')
+        return
+    end
+
+    if GiveVehicleKeyToPlayer then
+        GiveVehicleKeyToPlayer(xPlayer.source, xTarget.source, plate)
+        return
+    end
+
+    TriggerEvent('d9_inventory:giveVehicleKey', xTarget.source, plate)
+end
+
+local function buildPlayerInventoryPayload(target)
     local xPlayer = ESX.GetPlayerFromId(target)
-    if not xPlayer then return cb(nil) end
-    
-    local inventory = {}
-    local accounts = xPlayer.getAccounts()
-    local weapons = xPlayer.getLoadout()
-    
-    -- แปลง inventory DevDEK
-    for k,v in pairs(xPlayer.getInventory()) do
-        inventory[v.name] = v.count
+    if not xPlayer then
+        return nil
     end
-    
-    cb({
-        inventory = inventory,
-        accounts = accounts,
-        weapons = weapons,
-        money = xPlayer.getMoney()
-    })
+
+    local inventoryMap = {}
+    for _, item in pairs(xPlayer.getInventory() or {}) do
+        inventoryMap[item.name] = item.count
+    end
+
+    return {
+        inventory = inventoryMap,
+        accounts = xPlayer.getAccounts(),
+        weapons = xPlayer.getLoadout(),
+        money = xPlayer.getMoney(),
+    }
+end
+
+RegisterNetEvent("esx:playerLoaded")
+AddEventHandler("esx:playerLoaded", function(playerId)
+    TriggerClientEvent("esx_inventoryhud:GetVehicleKey", playerId)
+    TriggerClientEvent("esx_inventoryhud:GetAccessories", playerId)
 end)
 
--- ระบบ Vehicle Keys
+RegisterNetEvent("esx_inventoryhud:getOwnerVehicle")
+AddEventHandler("esx_inventoryhud:getOwnerVehicle", function()
+    TriggerClientEvent("esx_inventoryhud:GetVehicleKey", source)
+end)
+
+RegisterNetEvent("esx_inventoryhud:getOwnerAccessories")
+AddEventHandler("esx_inventoryhud:getOwnerAccessories", function()
+    TriggerClientEvent("esx_inventoryhud:GetAccessories", source)
+end)
+
+RegisterNetEvent(GetName("sv", "giveItem"))
+AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, amount, customData, isWelfare)
+    local source = source
+    local isValid, amountOrReason, xPlayer, xTarget = validateTransfer(source, target, itemType, itemName, amount)
+    if not isValid then
+        if amountOrReason == 'DISTANCE' then
+            notifyPlayer(xPlayer, '~r~ผู้เล่นอยู่ไกลเกินไป')
+        elseif amountOrReason == 'INVALID_AMOUNT' then
+            notifyPlayer(xPlayer, '~r~จำนวนไอเทมไม่ถูกต้อง')
+        end
+        return
+    end
+
+    local finalAmount = amountOrReason
+
+    if itemType == 'item_standard' then
+        transferStandardItem(xPlayer, xTarget, itemName, finalAmount)
+    elseif itemType == 'item_account' then
+        transferAccountMoney(xPlayer, xTarget, itemName, finalAmount)
+    elseif itemType == 'item_weapon' then
+        transferWeapon(xPlayer, xTarget, itemName)
+    elseif itemType == 'item_key' then
+        transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
+    end
+end)
+
+ESX.RegisterServerCallback(GetName("sv", "getPlayerInventory"), function(source, cb, target)
+    cb(buildPlayerInventoryPayload(target))
+end)
+
+ESX.RegisterServerCallback("esx_inventoryhud:getPlayerInventory", function(source, cb, target)
+    cb(buildPlayerInventoryPayload(target))
+end)
+
 ESX.RegisterServerCallback(GetName("callback", "Vehicle"), function(source, cb)
-    local xPlayer = ESX.GetPlayerFromId(source)
- -- ควรเชื่อมต่อกับระบบคีย์รถของคุณ Devdek
+    if GetOwnedVehiclesForPlayer then
+        GetOwnedVehiclesForPlayer(source, cb)
+        return
+    end
     cb({})
 end)
 
--- ระบบ Accessories
 ESX.RegisterServerCallback(GetName("callback", "Accessories"), function(source, cb)
-    -- ควรเชื่อมต่อกับระบบเสื้อผ้า/หน้ากาก
-    cb({})
+    local xPlayer = ESX.GetPlayerFromId(source)
+    if not xPlayer then
+        cb({})
+        return
+    end
+
+    MySQL.Async.fetchScalar('SELECT skin FROM users WHERE identifier = @identifier', {
+        ['@identifier'] = xPlayer.identifier
+    }, function(skinRaw)
+        if not skinRaw then
+            cb({})
+            return
+        end
+
+        local ok, skin = pcall(json.decode, skinRaw)
+        if not ok or type(skin) ~= 'table' then
+            cb({})
+            return
+        end
+
+        if skin.mask_1 and skin.mask_1 >= 0 then
+            cb({
+                mask = json.encode({
+                    mask_1 = skin.mask_1,
+                    mask_2 = skin.mask_2 or 0,
+                })
+            })
+            return
+        end
+
+        cb({})
+    end)
+end)
+
+RegisterNetEvent("esx_inventoryhud:DelAccessories")
+AddEventHandler("esx_inventoryhud:DelAccessories", function(accessoryLabel)
+    local src = source
+    if accessoryLabel ~= 'mask' then
+        return
+    end
+
+    TriggerClientEvent("esx_inventoryhud:setmask", src, {
+        mask_1 = -1,
+        mask_2 = 0,
+    })
 end)

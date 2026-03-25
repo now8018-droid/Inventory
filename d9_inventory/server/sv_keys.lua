@@ -1,31 +1,47 @@
 ESX = exports["es_extended"]:getSharedObject()
 
--- ดึงข้อมูลกุญแจรถของผู้เล่น
-ESX.RegisterServerCallback(GetName("callback", "Vehicle"), function(source, cb)
+function GetOwnedVehiclesForPlayer(source, cb)
     local xPlayer = ESX.GetPlayerFromId(source)
-    
+    if not xPlayer then
+        cb({})
+        return
+    end
+
     MySQL.Async.fetchAll('SELECT plate, vehicle FROM owned_vehicles WHERE owner = @owner', {
         ['@owner'] = xPlayer.identifier
     }, function(result)
         local vehicles = {}
-        for i=1, #result do
-            local vehicleProps = json.decode(result[i].vehicle)
-            table.insert(vehicles, {
+        for i = 1, #result do
+            local vehicleProps = json.decode(result[i].vehicle or "{}") or {}
+            local model = vehicleProps.model
+            local label = result[i].plate
+
+            if model then
+                local displayName = GetDisplayNameFromVehicleModel(model)
+                local translatedLabel = GetLabelText(displayName)
+                if translatedLabel and translatedLabel ~= "NULL" then
+                    label = translatedLabel
+                end
+            end
+
+            vehicles[#vehicles + 1] = {
                 plate = result[i].plate,
-                model = vehicleProps.model,
-                label = GetLabelText(GetDisplayNameFromVehicleModel(vehicleProps.model))
-            })
+                model = model,
+                label = label
+            }
         end
         cb(vehicles)
     end)
-end)
+end
 
 -- ให้กุญแจรถ
-RegisterNetEvent('d9_inventory:giveVehicleKey')
-AddEventHandler('d9_inventory:giveVehicleKey', function(target, plate)
-    local src = source
+function GiveVehicleKeyToPlayer(src, target, plate)
     local xPlayer = ESX.GetPlayerFromId(src)
     local xTarget = ESX.GetPlayerFromId(target)
+
+    if not xPlayer or not xTarget then
+        return false
+    end
     
     -- ตรวจสอบว่าเป็นเจ้าของรถจริง
     MySQL.Async.fetchScalar('SELECT owner FROM owned_vehicles WHERE plate = @plate', {
@@ -47,6 +63,12 @@ AddEventHandler('d9_inventory:giveVehicleKey', function(target, plate)
             xPlayer.showNotification('~r~คุณไม่ใช่เจ้าของรถคันนี้')
         end
     end)
+    return true
+end
+
+RegisterNetEvent('d9_inventory:giveVehicleKey')
+AddEventHandler('d9_inventory:giveVehicleKey', function(target, plate)
+    GiveVehicleKeyToPlayer(source, target, plate)
 end)
 
 -- ใช้กุญแจล็อครถ Devdek

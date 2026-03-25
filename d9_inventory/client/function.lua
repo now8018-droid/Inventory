@@ -276,12 +276,12 @@ function model:Giveitem(data)
 			}
 			if data.item.type == 'item_key' then
 				ESX.TriggerServerCallback(GetCurrentResourceName()..':getVehicleModelByPlate', function(hashModel)
-					if hashModel then
-						local modelName = GetDisplayNameFromVehicleModel(hashModel) 
-						local modelNameLower = string.lower(modelName)
-						nameCar = string.gsub(modelNameLower, "%s+", "_")			
-						TriggerServerEvent(GetName("sv", "giveItem"), Target, data.item.type, data.item.name, tonumber(data.number), data.item.label, Config.CarWelFare[nameCar])
-					else
+						if hashModel then
+							local modelName = GetDisplayNameFromVehicleModel(hashModel)
+							local modelNameLower = string.lower(modelName)
+							local nameCar = string.gsub(modelNameLower, "%s+", "_")
+							TriggerServerEvent(GetName("sv", "giveItem"), Target, data.item.type, data.item.name, tonumber(data.number), data.item.label, Config.CarWelFare[nameCar])
+						else
 						TriggerEvent('pNotify:SendNotification', {
 							text = 'ไม่พบข้อมูลรถ.!!!!',
 							type = 'info',
