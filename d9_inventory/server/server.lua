@@ -32,11 +32,31 @@ local TRANSFER_ERROR_MESSAGE = {
         return MSG.AMOUNT_EXCEEDED:format(TRANSFER_MAX_AMOUNT)
     end
 }
+local TRANSFER_ACTION_LABEL = {
+    item_standard = "ITEM",
+    item_account = "ACCOUNT",
+    item_weapon = "WEAPON",
+    item_key = "VEHICLE_KEY",
+}
 
 local function notifyPlayer(xPlayer, message)
     if xPlayer and xPlayer.showNotification then
         xPlayer.showNotification(message)
     end
+end
+
+local function logTransfer(actionType, sourceId, targetId, itemName, amount, outcome)
+    local actionLabel = TRANSFER_ACTION_LABEL[actionType] or tostring(actionType or "UNKNOWN")
+    local sourceName = GetPlayerName(sourceId) or ("src:%s"):format(sourceId or "nil")
+    local targetName = GetPlayerName(targetId) or ("tgt:%s"):format(targetId or "nil")
+    print(('[TRANSFER][%s][%s] %s -> %s | %s x%s'):format(
+        outcome or "INFO",
+        actionLabel,
+        sourceName,
+        targetName,
+        tostring(itemName or "unknown"),
+        tostring(amount or 0)
+    ))
 end
 
 local function getDistanceBetweenPlayers(source, target)
@@ -99,6 +119,7 @@ local function transferStandardItem(xPlayer, xTarget, itemName, amount)
     xTarget.addInventoryItem(itemName, amount)
     notifyPlayer(xPlayer, MSG.GIVE_ITEM_OK)
     notifyPlayer(xTarget, MSG.RECEIVE_ITEM:format(GetPlayerName(xPlayer.source)))
+    logTransfer('item_standard', xPlayer.source, xTarget.source, itemName, amount, "SUCCESS")
 end
 
 local function transferAccountMoney(xPlayer, xTarget, itemName, amount)
@@ -111,6 +132,7 @@ local function transferAccountMoney(xPlayer, xTarget, itemName, amount)
         xTarget.addMoney(amount)
         notifyPlayer(xPlayer, MSG.GIVE_MONEY_OK)
         notifyPlayer(xTarget, MSG.RECEIVE_MONEY:format(GetPlayerName(xPlayer.source)))
+        logTransfer('item_account', xPlayer.source, xTarget.source, itemName, amount, "SUCCESS")
         return
     end
 
@@ -124,6 +146,7 @@ local function transferAccountMoney(xPlayer, xTarget, itemName, amount)
         xTarget.addAccountMoney('black_money', amount)
         notifyPlayer(xPlayer, MSG.GIVE_BLACK_MONEY_OK)
         notifyPlayer(xTarget, MSG.RECEIVE_BLACK_MONEY:format(GetPlayerName(xPlayer.source)))
+        logTransfer('item_account', xPlayer.source, xTarget.source, itemName, amount, "SUCCESS")
     end
 end
 
@@ -140,6 +163,7 @@ local function transferWeapon(xPlayer, xTarget, itemName)
 
     notifyPlayer(xPlayer, MSG.GIVE_WEAPON_OK)
     notifyPlayer(xTarget, MSG.RECEIVE_WEAPON:format(GetPlayerName(xPlayer.source)))
+    logTransfer('item_weapon', xPlayer.source, xTarget.source, itemName, weaponAmmo, "SUCCESS")
 end
 
 local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
@@ -155,10 +179,12 @@ local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
 
     if GiveVehicleKeyToPlayer then
         GiveVehicleKeyToPlayer(xPlayer.source, xTarget.source, plate)
+        logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
         return
     end
 
     TriggerEvent('d9_inventory:giveVehicleKey', xTarget.source, plate)
+    logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
 end
 
 local function buildPlayerInventoryPayload(target)
@@ -208,6 +234,7 @@ function ProcessInventoryTransfer(source, target, itemType, itemName, amount, cu
         if msgBuilder then
             notifyPlayer(xPlayer, msgBuilder())
         end
+        logTransfer(itemType, source, target, itemName, amount, amountOrReason)
         return false
     end
 
