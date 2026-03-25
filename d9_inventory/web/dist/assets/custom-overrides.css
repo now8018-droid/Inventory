@@ -9,20 +9,45 @@
   --inv-fastslot-col-width: calc(98 * var(--px));
 
   --inv-topbar-height: calc(36 * var(--px));
+  --inv-topbar-width: 100%;
   --inv-panel-height: calc(800 * var(--px));
   --inv-panel-radius: calc(16 * var(--px));
   --inv-slot-radius: calc(10 * var(--px));
+
+  /* Inventory root positioning */
+  --inv-root-left: 50%;
+  --inv-root-top: 50%;
+  --inv-root-offset-x: calc(0 * var(--px));
+  --inv-root-offset-y: calc(0 * var(--px));
 
   /* data-v-5abd30f8 (Topbar) */
   --inv-topbar-icon-size: calc(34 * var(--px));
   --inv-topbar-icon-radius: calc(8 * var(--px));
   --inv-topbar-title-size: calc(28 * var(--px));
+  --inv-topbar-left-gap: calc(6 * var(--px));
+  --inv-topbar-right-gap: calc(4 * var(--px));
   --inv-topbar-group-gap: calc(6 * var(--px));
+  --inv-topbar-filter-padding: calc(4 * var(--px));
+  --inv-topbar-filter-radius: calc(10 * var(--px));
+  --inv-topbar-filter-gap: calc(6 * var(--px));
+  --inv-topbar-cat-radius: calc(6 * var(--px));
   --inv-topbar-cat-padding-x: calc(8 * var(--px));
   --inv-topbar-cat-font-size: calc(10 * var(--px));
   --inv-topbar-search-width: calc(170 * var(--px));
   --inv-topbar-search-height: calc(36 * var(--px));
+  --inv-topbar-search-radius: calc(10 * var(--px));
+  --inv-topbar-search-font-size: calc(12 * var(--px));
+  --inv-topbar-search-placeholder-size: calc(10 * var(--px));
   --inv-topbar-mail-size: calc(36 * var(--px));
+  --inv-topbar-mail-radius: calc(10 * var(--px));
+  --inv-topbar-mail-icon-size: calc(20 * var(--px));
+}
+
+/* Inventory root (center + optional offsets) */
+.inventory-root {
+  left: var(--inv-root-left) !important;
+  top: var(--inv-root-top) !important;
+  transform: translate(calc(-50% + var(--inv-root-offset-x)), calc(-50% + var(--inv-root-offset-y))) !important;
 }
 
 /* Main panel */
@@ -31,8 +56,24 @@
 
 /* Topbar */
 [data-v-5abd30f8].pv\:w-full.pv\:h-\[36px\] {
+  width: var(--inv-topbar-width) !important;
   height: var(--inv-topbar-height) !important;
   gap: var(--inv-topbar-group-gap) !important;
+}
+[data-v-5abd30f8] .pv\:space-x-\[6px\] {
+  column-gap: var(--inv-topbar-left-gap) !important;
+}
+[data-v-5abd30f8] .pv\:space-x-\[4px\] {
+  column-gap: var(--inv-topbar-right-gap) !important;
+}
+[data-v-5abd30f8] .pv\:p-\[4px\] {
+  padding: var(--inv-topbar-filter-padding) !important;
+}
+[data-v-5abd30f8] .pv\:rounded-\[10px\] {
+  border-radius: var(--inv-topbar-filter-radius) !important;
+}
+[data-v-5abd30f8] .pv\:space-x-\[6px\].pv\:w-auto.pv\:h-full.flex.justify-center.items-center.bg-\[\#070809\]\/5 {
+  column-gap: var(--inv-topbar-filter-gap) !important;
 }
 
 /* left icon button */
@@ -51,6 +92,9 @@
 [data-v-5abd30f8] .pv\:text-\[10px\] {
   font-size: var(--inv-topbar-cat-font-size) !important;
 }
+[data-v-5abd30f8] .pv\:rounded-\[6px\] {
+  border-radius: var(--inv-topbar-cat-radius) !important;
+}
 [data-v-5abd30f8] .pv\:px-\[8px\] {
   padding-left: var(--inv-topbar-cat-padding-x) !important;
   padding-right: var(--inv-topbar-cat-padding-x) !important;
@@ -62,12 +106,23 @@
 }
 [data-v-5abd30f8] .pv\:h-full.bg-\[\#070809\]\/5.pv\:rounded-\[10px\] {
   height: var(--inv-topbar-search-height) !important;
+  border-radius: var(--inv-topbar-search-radius) !important;
+}
+[data-v-5abd30f8] input.pv\:text-\[12px\] {
+  font-size: var(--inv-topbar-search-font-size) !important;
+}
+[data-v-5abd30f8] input.placeholder\:pv\:text-\[10px\]::placeholder {
+  font-size: var(--inv-topbar-search-placeholder-size) !important;
 }
 
 /* mailbox button */
 [data-v-5abd30f8] .pv\:size-\[36px\] {
   width: var(--inv-topbar-mail-size) !important;
   height: var(--inv-topbar-mail-size) !important;
+  border-radius: var(--inv-topbar-mail-radius) !important;
+}
+[data-v-5abd30f8] .material-symbols-outlined.text-\[\#1C92D2\].pv\:text-\[20px\] {
+  font-size: var(--inv-topbar-mail-icon-size) !important;
 }
 
 /* Fastslot column container */
