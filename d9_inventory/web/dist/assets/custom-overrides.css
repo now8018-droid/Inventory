@@ -19,12 +19,24 @@
   --inv-topbar-icon-size: calc(34 * var(--px));
   --inv-topbar-icon-radius: calc(8 * var(--px));
   --inv-topbar-title-size: calc(28 * var(--px));
+  --inv-topbar-weight: 700;
+  --inv-topbar-title-color: #ffffff;
   --inv-topbar-group-gap: calc(6 * var(--px));
   --inv-topbar-cat-padding-x: calc(8 * var(--px));
   --inv-topbar-cat-font-size: calc(10 * var(--px));
+  --inv-topbar-cat-font-weight: 400;
+  --inv-topbar-cat-text-color: #ffffff;
   --inv-topbar-search-width: calc(170 * var(--px));
   --inv-topbar-search-height: calc(36 * var(--px));
+  --inv-topbar-search-font-size: calc(12 * var(--px));
+  --inv-topbar-search-font-weight: 500;
+  --inv-topbar-search-text-color: #ffffff;
+  --inv-topbar-search-placeholder-color: #ffffff80;
+  --inv-topbar-search-border-color: #ffffff1a;
   --inv-topbar-mail-size: calc(36 * var(--px));
+  --inv-topbar-mail-icon-size: calc(20 * var(--px));
+  --inv-topbar-mail-icon-color: #1C92D2;
+  --inv-topbar-mail-border-color: #ffffff1a;
   --inv-topbar-offset-x: 0px;
   --inv-topbar-offset-y: 0px;
   --inv-topbar-left-group-offset-x: 0px;
@@ -43,6 +55,12 @@
   --inv-fastslot-offset-y: 0px;
   --inv-fastslot-item-offset-x: 0px;
   --inv-fastslot-item-offset-y: 0px;
+  --inv-fastslot-font-size: calc(12 * var(--px));
+  --inv-fastslot-font-weight: 700;
+  --inv-fastslot-text-color: #ffffff;
+  --inv-fastslot-badge-size: calc(24 * var(--px));
+  --inv-fastslot-badge-font-size: calc(12 * var(--px));
+  --inv-fastslot-badge-font-weight: 700;
 
   /*
     Full UI component transform controls
@@ -100,11 +118,21 @@
 /* title text */
 [data-v-5abd30f8] .text-white.pv\:text-\[px\] {
   font-size: var(--inv-topbar-title-size) !important;
+  font-weight: var(--inv-topbar-weight) !important;
+  color: var(--inv-topbar-title-color) !important;
+}
+/* fallback in case build emits explicit pixel utility */
+[data-v-5abd30f8] .text-white.pv\:text-\[28px\] {
+  font-size: var(--inv-topbar-title-size) !important;
+  font-weight: var(--inv-topbar-weight) !important;
+  color: var(--inv-topbar-title-color) !important;
 }
 
 /* category button */
 [data-v-5abd30f8] .pv\:text-\[10px\] {
   font-size: var(--inv-topbar-cat-font-size) !important;
+  font-weight: var(--inv-topbar-cat-font-weight) !important;
+  color: var(--inv-topbar-cat-text-color) !important;
 }
 [data-v-5abd30f8] .pv\:px-\[8px\] {
   padding-left: var(--inv-topbar-cat-padding-x) !important;
@@ -120,6 +148,18 @@
   position: relative;
   left: var(--inv-topbar-search-offset-x);
   top: var(--inv-topbar-search-offset-y);
+  font-size: var(--inv-topbar-search-font-size) !important;
+  font-weight: var(--inv-topbar-search-font-weight) !important;
+  color: var(--inv-topbar-search-text-color) !important;
+  border-color: var(--inv-topbar-search-border-color) !important;
+}
+[data-v-5abd30f8] .pv\:w-\[170px\] input {
+  font-size: var(--inv-topbar-search-font-size) !important;
+  font-weight: var(--inv-topbar-search-font-weight) !important;
+  color: var(--inv-topbar-search-text-color) !important;
+}
+[data-v-5abd30f8] input::placeholder {
+  color: var(--inv-topbar-search-placeholder-color) !important;
 }
 [data-v-5abd30f8] .pv\:h-full.bg-\[\#070809\]\/5.pv\:rounded-\[10px\] {
   height: var(--inv-topbar-search-height) !important;
@@ -132,6 +172,11 @@
   position: relative;
   left: var(--inv-topbar-mail-offset-x);
   top: var(--inv-topbar-mail-offset-y);
+  border-color: var(--inv-topbar-mail-border-color) !important;
+}
+[data-v-5abd30f8] .pv\:size-\[36px\] .material-symbols-outlined {
+  font-size: var(--inv-topbar-mail-icon-size) !important;
+  color: var(--inv-topbar-mail-icon-color) !important;
 }
 
 /* Fastslot column container */
@@ -153,6 +198,20 @@
   position: relative;
   left: var(--inv-fastslot-item-offset-x);
   top: var(--inv-fastslot-item-offset-y);
+}
+.Fastslot[data-v-41036f3e] span,
+.Fastslot[data-v-41036f3e] div {
+  font-size: var(--inv-fastslot-font-size) !important;
+  font-weight: var(--inv-fastslot-font-weight) !important;
+  color: var(--inv-fastslot-text-color) !important;
+}
+.Fastslot[data-v-41036f3e] > .absolute {
+  width: var(--inv-fastslot-badge-size) !important;
+  height: var(--inv-fastslot-badge-size) !important;
+}
+.Fastslot[data-v-41036f3e] > .absolute span {
+  font-size: var(--inv-fastslot-badge-font-size) !important;
+  font-weight: var(--inv-fastslot-badge-font-weight) !important;
 }
 
 /* Vertical spacing between fastslots */
