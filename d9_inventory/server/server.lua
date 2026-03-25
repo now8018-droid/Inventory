@@ -21,6 +21,17 @@ local MSG = {
     NO_PLATE = '~r~ไม่พบข้อมูลป้ายทะเบียนรถ',
     WELFARE_BLOCK = '~r~รถคันนี้ไม่สามารถเทรดผ่าน Trade Car Welfare ได้',
 }
+local TRANSFER_ERROR_MESSAGE = {
+    DISTANCE = function()
+        return MSG.TOO_FAR
+    end,
+    INVALID_AMOUNT = function()
+        return MSG.INVALID_AMOUNT
+    end,
+    AMOUNT_EXCEEDED = function()
+        return MSG.AMOUNT_EXCEEDED:format(TRANSFER_MAX_AMOUNT)
+    end
+}
 
 local function notifyPlayer(xPlayer, message)
     if xPlayer and xPlayer.showNotification then
@@ -193,12 +204,9 @@ end)
 function ProcessInventoryTransfer(source, target, itemType, itemName, amount, customData, isWelfare)
     local isValid, amountOrReason, xPlayer, xTarget = validateTransfer(source, target, itemType, itemName, amount)
     if not isValid then
-        if amountOrReason == 'DISTANCE' then
-            notifyPlayer(xPlayer, MSG.TOO_FAR)
-        elseif amountOrReason == 'INVALID_AMOUNT' then
-            notifyPlayer(xPlayer, MSG.INVALID_AMOUNT)
-        elseif amountOrReason == 'AMOUNT_EXCEEDED' then
-            notifyPlayer(xPlayer, MSG.AMOUNT_EXCEEDED:format(TRANSFER_MAX_AMOUNT))
+        local msgBuilder = TRANSFER_ERROR_MESSAGE[amountOrReason]
+        if msgBuilder then
+            notifyPlayer(xPlayer, msgBuilder())
         end
         return false
     end
