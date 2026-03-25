@@ -129,8 +129,13 @@ end
 
 -- @function OnInventoryClose
 exports("OnInventoryClose", function()
-	model:CloseInventory()
+	model:CloseInventiry()
 end)
+
+-- backward compatibility alias (new name -> old typo)
+function model:CloseInventory()
+	return self:CloseInventiry()
+end
 
 -- @function CloseInventiry
 function model:CloseInventiry()
@@ -273,12 +278,6 @@ function model:Giveitem(data)
 			and IsPedOnFoot(playertarget)
 			and not IsPedUsingAnyScenario(playerPed)
 		then
-			local dataitem = {
-				id = Target,
-				type = data.item.type,
-				name = data.item.name,
-				count = tonumber(data.number),
-			}
 			if data.item.type == 'item_key' then
 				ESX.TriggerServerCallback(GetCurrentResourceName()..':getVehicleModelByPlate', function(hashModel)
 						if hashModel then
