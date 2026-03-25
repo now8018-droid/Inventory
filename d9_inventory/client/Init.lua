@@ -15,11 +15,40 @@ ispressed = function(input, key)
 	return IsDisabledControlJustReleased(input, key)
 end
 
+local NUI_COALESCE_EVENTS = {
+	["update-fastslot"] = true,
+	["MailBoxCount"] = true
+}
+local queuedNuiMessages = {}
+local isNuiFlushScheduled = false
+
+local function flushQueuedNuiMessages()
+	isNuiFlushScheduled = false
+	for eventName, payload in pairs(queuedNuiMessages) do
+		SendNUIMessage(payload)
+		queuedNuiMessages[eventName] = nil
+	end
+end
+
 Eventnui = function(event, data)
-	SendNUIMessage({
+	local payload = {
 		event = event,
 		data = data,
-	})
+	}
+
+	if NUI_COALESCE_EVENTS[event] then
+		queuedNuiMessages[event] = payload
+		if not isNuiFlushScheduled then
+			isNuiFlushScheduled = true
+			CreateThread(function()
+				Wait(0)
+				flushQueuedNuiMessages()
+			end)
+		end
+		return
+	end
+
+	SendNUIMessage(payload)
 end
 
 local nuiReady = promise.new()
