@@ -187,6 +187,21 @@ local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
     logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
 end
 
+local TRANSFER_EXECUTOR = {
+    item_standard = function(xPlayer, xTarget, itemName, amount)
+        transferStandardItem(xPlayer, xTarget, itemName, amount)
+    end,
+    item_account = function(xPlayer, xTarget, itemName, amount)
+        transferAccountMoney(xPlayer, xTarget, itemName, amount)
+    end,
+    item_weapon = function(xPlayer, xTarget, itemName)
+        transferWeapon(xPlayer, xTarget, itemName)
+    end,
+    item_key = function(xPlayer, xTarget, itemName, amount, customData, isWelfare)
+        transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
+    end
+}
+
 local function buildPlayerInventoryPayload(target)
     local xPlayer = ESX.GetPlayerFromId(target)
     if not xPlayer then
@@ -240,15 +255,12 @@ function ProcessInventoryTransfer(source, target, itemType, itemName, amount, cu
 
     local finalAmount = amountOrReason
 
-    if itemType == 'item_standard' then
-        transferStandardItem(xPlayer, xTarget, itemName, finalAmount)
-    elseif itemType == 'item_account' then
-        transferAccountMoney(xPlayer, xTarget, itemName, finalAmount)
-    elseif itemType == 'item_weapon' then
-        transferWeapon(xPlayer, xTarget, itemName)
-    elseif itemType == 'item_key' then
-        transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
+    local executor = TRANSFER_EXECUTOR[itemType]
+    if not executor then
+        logTransfer(itemType, source, target, itemName, amount, "UNSUPPORTED_TYPE")
+        return false
     end
+    executor(xPlayer, xTarget, itemName, finalAmount, customData, isWelfare)
     return true
 end
 
