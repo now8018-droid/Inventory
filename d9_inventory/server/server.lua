@@ -162,7 +162,10 @@ end)
 
 RegisterNetEvent(GetName("sv", "giveItem"))
 AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, amount, customData, isWelfare)
-    local source = source
+    ProcessInventoryTransfer(source, target, itemType, itemName, amount, customData, isWelfare)
+end)
+
+function ProcessInventoryTransfer(source, target, itemType, itemName, amount, customData, isWelfare)
     local isValid, amountOrReason, xPlayer, xTarget = validateTransfer(source, target, itemType, itemName, amount)
     if not isValid then
         if amountOrReason == 'DISTANCE' then
@@ -170,7 +173,7 @@ AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, 
         elseif amountOrReason == 'INVALID_AMOUNT' then
             notifyPlayer(xPlayer, '~r~จำนวนไอเทมไม่ถูกต้อง')
         end
-        return
+        return false
     end
 
     local finalAmount = amountOrReason
@@ -184,7 +187,8 @@ AddEventHandler(GetName("sv", "giveItem"), function(target, itemType, itemName, 
     elseif itemType == 'item_key' then
         transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
     end
-end)
+    return true
+end
 
 ESX.RegisterServerCallback(GetName("sv", "getPlayerInventory"), function(source, cb, target)
     cb(buildPlayerInventoryPayload(target))

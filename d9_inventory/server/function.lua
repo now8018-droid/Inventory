@@ -2,10 +2,8 @@
 RegisterNetEvent("esx_inventoryhud:tradePlayerItem")
 AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType, itemName, count, tradeType)
     local src = source
-    local xPlayer = ESX.GetPlayerFromId(src)
     local xTarget = ESX.GetPlayerFromId(to)
-    
-    if not xPlayer or not xTarget then return end
+    if not xTarget then return end
     
     -- ตรวจสอบการโกง
     if from and src ~= from then
@@ -19,24 +17,9 @@ AddEventHandler("esx_inventoryhud:tradePlayerItem", function(from, to, itemType,
     end
     
     count = ESX.Math.Round(count)
-    
-    if itemType == 'item_standard' then
-        local item = xPlayer.getInventoryItem(itemName)
-        if item and item.count >= count then
-            xPlayer.removeInventoryItem(itemName, count)
-            xTarget.addInventoryItem(itemName, count)
-            
-            -- Log การโอน
-            print(('^3[TRADE] %s ให้ %s จำนวน %s %s'):format(
-                GetPlayerName(src), GetPlayerName(to), count, itemName
-            ))
-        end
-    elseif itemType == 'item_weapon' then
-        if xPlayer.hasWeapon(itemName) then
-            local weapon = xPlayer.getWeapon(itemName)
-            xPlayer.removeWeapon(itemName)
-            xTarget.addWeapon(itemName, weapon.ammo)
-        end
+
+    if ProcessInventoryTransfer then
+        ProcessInventoryTransfer(src, to, itemType, itemName, count)
     end
 end)
 
