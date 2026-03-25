@@ -48,6 +48,34 @@ local function mergedSection(sectionName)
     return merged
 end
 
+local function reportPolicySchemaIssues()
+    if type(TransferPolicy) ~= "table" then
+        print("^3[D9 Inventory] TransferPolicy missing or invalid, using defaults^0")
+        return
+    end
+
+    for sectionName, defaults in pairs(DEFAULT_POLICY) do
+        local custom = TransferPolicy[sectionName]
+        if custom ~= nil and type(custom) ~= "table" then
+            print(("^3[D9 Inventory] TransferPolicy.%s should be table (got %s), using defaults^0"):format(
+                sectionName, type(custom)
+            ))
+        elseif type(custom) == "table" then
+            for key, defaultValue in pairs(defaults) do
+                local customValue = custom[key]
+                if customValue ~= nil and type(customValue) ~= type(defaultValue) then
+                    print(("^3[D9 Inventory] TransferPolicy.%s.%s type mismatch (expected %s got %s), using default^0"):format(
+                        sectionName,
+                        key,
+                        type(defaultValue),
+                        type(customValue)
+                    ))
+                end
+            end
+        end
+    end
+end
+
 local POLICY_LIMITS = mergedSection("limits")
 local TRANSFER_MAX_DISTANCE = POLICY_LIMITS.max_distance
 local TRANSFER_MAX_AMOUNT = POLICY_LIMITS.max_amount
@@ -65,6 +93,11 @@ local TRANSFER_ERROR_MESSAGE = {
     end
 }
 local TRANSFER_POLICY = {}
+
+CreateThread(function()
+    Wait(0)
+    reportPolicySchemaIssues()
+end)
 
 local function notifyPlayer(xPlayer, message)
     if xPlayer and xPlayer.showNotification then
