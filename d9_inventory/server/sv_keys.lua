@@ -16,12 +16,11 @@ function GetOwnedVehiclesForPlayer(source, cb)
             local model = vehicleProps.model
             local label = result[i].plate
 
+            -- NOTE:
+            -- GetDisplayNameFromVehicleModel / GetLabelText เป็น native ฝั่ง client
+            -- ฝั่ง server เรียกไม่ได้ (จะเป็น nil) จึงใช้ fallback เป็น model/plate แทน
             if model then
-                local displayName = GetDisplayNameFromVehicleModel(model)
-                local translatedLabel = GetLabelText(displayName)
-                if translatedLabel and translatedLabel ~= "NULL" then
-                    label = translatedLabel
-                end
+                label = tostring(model)
             end
 
             vehicles[#vehicles + 1] = {
