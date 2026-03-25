@@ -19,10 +19,53 @@
         --inv-ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
       }
 
+      @keyframes inv-panel-in {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.975);
+          filter: blur(2px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes inv-panel-out {
+        from {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(10px) scale(0.985);
+          filter: blur(1px);
+        }
+      }
+
+      @keyframes inv-item-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
       /* Inventory open/close animation */
       .fade-enter-active,
       .fade-leave-active {
         transition: opacity 0.2s ease, transform 0.24s var(--inv-ease-out) !important;
+      }
+      .fade-enter-active {
+        animation: inv-panel-in 0.24s var(--inv-ease-out) both;
+      }
+      .fade-leave-active {
+        animation: inv-panel-out 0.18s ease both;
       }
       .fade-enter-from,
       .fade-leave-to {
@@ -47,6 +90,10 @@
           border-color 0.2s var(--inv-ease-smooth),
           opacity 0.2s var(--inv-ease-smooth) !important;
         will-change: transform;
+      }
+      .Myinventorylist .itembox,
+      .Secondinventorylist .itembox {
+        animation: inv-item-in 0.18s var(--inv-ease-out) both;
       }
 
       .itembox:hover,
