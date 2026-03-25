@@ -32,12 +32,7 @@ local TRANSFER_ERROR_MESSAGE = {
         return MSG.AMOUNT_EXCEEDED:format(TRANSFER_MAX_AMOUNT)
     end
 }
-local TRANSFER_ACTION_LABEL = {
-    item_standard = "ITEM",
-    item_account = "ACCOUNT",
-    item_weapon = "WEAPON",
-    item_key = "VEHICLE_KEY",
-}
+local TRANSFER_POLICY = {}
 
 local function notifyPlayer(xPlayer, message)
     if xPlayer and xPlayer.showNotification then
@@ -46,7 +41,8 @@ local function notifyPlayer(xPlayer, message)
 end
 
 local function logTransfer(actionType, sourceId, targetId, itemName, amount, outcome)
-    local actionLabel = TRANSFER_ACTION_LABEL[actionType] or tostring(actionType or "UNKNOWN")
+    local policy = TRANSFER_POLICY[actionType]
+    local actionLabel = (policy and policy.label) or tostring(actionType or "UNKNOWN")
     local sourceName = GetPlayerName(sourceId) or ("src:%s"):format(sourceId or "nil")
     local targetName = GetPlayerName(targetId) or ("tgt:%s"):format(targetId or "nil")
     print(('[TRANSFER][%s][%s] %s -> %s | %s x%s'):format(
@@ -217,19 +213,31 @@ local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
     logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
 end
 
-local TRANSFER_EXECUTOR = {
-    item_standard = function(xPlayer, xTarget, itemName, amount)
-        transferStandardItem(xPlayer, xTarget, itemName, amount)
-    end,
-    item_account = function(xPlayer, xTarget, itemName, amount)
-        transferAccountMoney(xPlayer, xTarget, itemName, amount)
-    end,
-    item_weapon = function(xPlayer, xTarget, itemName)
-        transferWeapon(xPlayer, xTarget, itemName)
-    end,
-    item_key = function(xPlayer, xTarget, itemName, amount, customData, isWelfare)
-        transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
-    end
+TRANSFER_POLICY = {
+    item_standard = {
+        label = "ITEM",
+        execute = function(xPlayer, xTarget, itemName, amount)
+            transferStandardItem(xPlayer, xTarget, itemName, amount)
+        end
+    },
+    item_account = {
+        label = "ACCOUNT",
+        execute = function(xPlayer, xTarget, itemName, amount)
+            transferAccountMoney(xPlayer, xTarget, itemName, amount)
+        end
+    },
+    item_weapon = {
+        label = "WEAPON",
+        execute = function(xPlayer, xTarget, itemName)
+            transferWeapon(xPlayer, xTarget, itemName)
+        end
+    },
+    item_key = {
+        label = "VEHICLE_KEY",
+        execute = function(xPlayer, xTarget, itemName, amount, customData, isWelfare)
+            transferVehicleKey(xPlayer, xTarget, customData or itemName, isWelfare)
+        end
+    }
 }
 
 local function buildPlayerInventoryPayload(target)
@@ -285,12 +293,12 @@ function ProcessInventoryTransfer(source, target, itemType, itemName, amount, cu
 
     local finalAmount = amountOrReason
 
-    local executor = TRANSFER_EXECUTOR[itemType]
-    if not executor then
+    local policy = TRANSFER_POLICY[itemType]
+    if not policy or not policy.execute then
         logTransfer(itemType, source, target, itemName, amount, "UNSUPPORTED_TYPE")
         return false
     end
-    executor(xPlayer, xTarget, itemName, finalAmount, customData, isWelfare)
+    policy.execute(xPlayer, xTarget, itemName, finalAmount, customData, isWelfare)
     return true
 end
 
