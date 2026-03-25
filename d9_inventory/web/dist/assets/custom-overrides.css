@@ -1,0 +1,44 @@
+/*
+  Inventory NUI custom CSS overrides
+  - Edit variables below to tune UI without touching minified bundles.
+  - Loaded AFTER index-lKaF8FZ1.css
+*/
+:root {
+  --inv-fastslot-size: calc(98 * var(--px));
+  --inv-fastslot-gap: calc(10 * var(--px));
+  --inv-fastslot-col-width: calc(98 * var(--px));
+
+  --inv-topbar-height: calc(36 * var(--px));
+  --inv-panel-height: calc(800 * var(--px));
+  --inv-panel-radius: calc(16 * var(--px));
+  --inv-slot-radius: calc(10 * var(--px));
+}
+
+/* Main panel */
+.inventory-root .pv\:h-\[800px\] { height: var(--inv-panel-height) !important; }
+.inventory-root .pv\:rounded-\[16px\] { border-radius: var(--inv-panel-radius) !important; }
+
+/* Topbar */
+[data-v-5abd30f8].pv\:w-full.pv\:h-\[36px\] {
+  height: var(--inv-topbar-height) !important;
+}
+
+/* Fastslot column container */
+[data-v-41036f3e].pv\:w-\[98px\] {
+  width: var(--inv-fastslot-col-width) !important;
+  min-width: var(--inv-fastslot-col-width) !important;
+  max-width: var(--inv-fastslot-col-width) !important;
+}
+
+/* Fastslot tile */
+.Fastslot[data-v-41036f3e] {
+  width: var(--inv-fastslot-size) !important;
+  height: var(--inv-fastslot-size) !important;
+  flex: 0 0 var(--inv-fastslot-size) !important;
+  border-radius: var(--inv-slot-radius) !important;
+}
+
+/* Vertical spacing between fastslots */
+[data-v-41036f3e].pv\:gap-\[10px\] {
+  gap: var(--inv-fastslot-gap) !important;
+}
