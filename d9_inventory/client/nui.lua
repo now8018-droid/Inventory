@@ -96,8 +96,15 @@ function model:InitNUI()
 			isOpenPlayerNearby = true
 			blockFastLost = true
 			updateNearbyPlayers()
+			local nextRefresh = GetGameTimer() + 250
 			while isOpenPlayerNearby do
 				Wait(0)
+				local now = GetGameTimer()
+				if now >= nextRefresh then
+					updateNearbyPlayers()
+					nextRefresh = now + 250
+				end
+
 				-- ปุ่ม ESC/BACKSPACE เพื่อปิดเมนู
 				if isPressed(0, 202) then
 					isOpenPlayerNearby = false
@@ -111,13 +118,14 @@ function model:InitNUI()
 				-- ปุ่ม SPACEBAR เพื่อรีเฟรชผู้เล่นที่อยู่ใกล้
 				if isPressed(0, 22) then
 					updateNearbyPlayers()
+					nextRefresh = GetGameTimer() + 250
 					Wait(100)
 				end
-				
+
+				local myCoords = GetEntityCoords(PlayerPedId())
 				for index, playerInfo in ipairs(nearbyPlayers) do
 					local targetPed = GetPlayerPed(playerInfo.id)
 					local targetCoords = GetEntityCoords(targetPed)
-					local myCoords = GetEntityCoords(PlayerPedId())
 					local distance = #(myCoords - targetCoords)
 					local targetId = GetPlayerServerId(playerInfo.id)
 					if distance <= 1.5 then
