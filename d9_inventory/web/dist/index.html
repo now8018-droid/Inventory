@@ -31,6 +31,18 @@
         content-visibility: auto;
         contain-intrinsic-size: 800px 600px;
       }
+
+      /* Reduce heavy paint effects (blur/filter/shadow) for max FPS */
+      .blur-sm,
+      .filter,
+      .grayscale {
+        filter: none !important;
+      }
+
+      * {
+        text-shadow: none !important;
+        box-shadow: none !important;
+      }
     </style>
   </head>
   <body>
