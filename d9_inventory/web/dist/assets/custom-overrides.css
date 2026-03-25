@@ -12,6 +12,8 @@
   --inv-panel-height: calc(800 * var(--px));
   --inv-panel-radius: calc(16 * var(--px));
   --inv-slot-radius: calc(10 * var(--px));
+  --inv-root-offset-x: 0px;
+  --inv-root-offset-y: 0px;
 
   /* data-v-5abd30f8 (Topbar) */
   --inv-topbar-icon-size: calc(34 * var(--px));
@@ -23,9 +25,31 @@
   --inv-topbar-search-width: calc(170 * var(--px));
   --inv-topbar-search-height: calc(36 * var(--px));
   --inv-topbar-mail-size: calc(36 * var(--px));
+  --inv-topbar-offset-x: 0px;
+  --inv-topbar-offset-y: 0px;
+  --inv-topbar-left-group-offset-x: 0px;
+  --inv-topbar-left-group-offset-y: 0px;
+  --inv-topbar-right-group-offset-x: 0px;
+  --inv-topbar-right-group-offset-y: 0px;
+  --inv-topbar-category-offset-x: 0px;
+  --inv-topbar-category-offset-y: 0px;
+  --inv-topbar-search-offset-x: 0px;
+  --inv-topbar-search-offset-y: 0px;
+  --inv-topbar-mail-offset-x: 0px;
+  --inv-topbar-mail-offset-y: 0px;
+
+  /* Fastslot positioning */
+  --inv-fastslot-offset-x: 0px;
+  --inv-fastslot-offset-y: 0px;
+  --inv-fastslot-item-offset-x: 0px;
+  --inv-fastslot-item-offset-y: 0px;
 }
 
 /* Main panel */
+.inventory-root {
+  margin-left: var(--inv-root-offset-x) !important;
+  margin-top: var(--inv-root-offset-y) !important;
+}
 .inventory-root .pv\:h-\[800px\] { height: var(--inv-panel-height) !important; }
 .inventory-root .pv\:rounded-\[16px\] { border-radius: var(--inv-panel-radius) !important; }
 
@@ -33,6 +57,21 @@
 [data-v-5abd30f8].pv\:w-full.pv\:h-\[36px\] {
   height: var(--inv-topbar-height) !important;
   gap: var(--inv-topbar-group-gap) !important;
+  position: relative;
+  left: var(--inv-topbar-offset-x);
+  top: var(--inv-topbar-offset-y);
+}
+
+[data-v-5abd30f8] .pv\:w-auto.pv\:h-full.flex.items-center.pv\:space-x-\[6px\] {
+  position: relative;
+  left: var(--inv-topbar-left-group-offset-x);
+  top: var(--inv-topbar-left-group-offset-y);
+}
+
+[data-v-5abd30f8] .pv\:w-auto.pv\:h-full.flex.pv\:space-x-\[4px\] {
+  position: relative;
+  left: var(--inv-topbar-right-group-offset-x);
+  top: var(--inv-topbar-right-group-offset-y);
 }
 
 /* left icon button */
@@ -54,11 +93,17 @@
 [data-v-5abd30f8] .pv\:px-\[8px\] {
   padding-left: var(--inv-topbar-cat-padding-x) !important;
   padding-right: var(--inv-topbar-cat-padding-x) !important;
+  position: relative;
+  left: var(--inv-topbar-category-offset-x);
+  top: var(--inv-topbar-category-offset-y);
 }
 
 /* search input */
 [data-v-5abd30f8] .pv\:w-\[170px\] {
   width: var(--inv-topbar-search-width) !important;
+  position: relative;
+  left: var(--inv-topbar-search-offset-x);
+  top: var(--inv-topbar-search-offset-y);
 }
 [data-v-5abd30f8] .pv\:h-full.bg-\[\#070809\]\/5.pv\:rounded-\[10px\] {
   height: var(--inv-topbar-search-height) !important;
@@ -68,6 +113,9 @@
 [data-v-5abd30f8] .pv\:size-\[36px\] {
   width: var(--inv-topbar-mail-size) !important;
   height: var(--inv-topbar-mail-size) !important;
+  position: relative;
+  left: var(--inv-topbar-mail-offset-x);
+  top: var(--inv-topbar-mail-offset-y);
 }
 
 /* Fastslot column container */
@@ -75,6 +123,9 @@
   width: var(--inv-fastslot-col-width) !important;
   min-width: var(--inv-fastslot-col-width) !important;
   max-width: var(--inv-fastslot-col-width) !important;
+  position: relative;
+  left: var(--inv-fastslot-offset-x);
+  top: var(--inv-fastslot-offset-y);
 }
 
 /* Fastslot tile */
@@ -83,6 +134,9 @@
   height: var(--inv-fastslot-size) !important;
   flex: 0 0 var(--inv-fastslot-size) !important;
   border-radius: var(--inv-slot-radius) !important;
+  position: relative;
+  left: var(--inv-fastslot-item-offset-x);
+  top: var(--inv-fastslot-item-offset-y);
 }
 
 /* Vertical spacing between fastslots */
