@@ -70,42 +70,72 @@ local function getDistanceBetweenPlayers(source, target)
     return #(GetEntityCoords(srcPed) - GetEntityCoords(targetPed))
 end
 
+local VALIDATION_RULES = {
+    function(ctx)
+        if not ctx.xPlayer or not ctx.xTarget then
+            return false, 'INVALID_PLAYER'
+        end
+        return true
+    end,
+    function(ctx)
+        if ctx.source == ctx.target then
+            return false, 'SELF_TRANSFER'
+        end
+        return true
+    end,
+    function(ctx)
+        if ctx.amount < 1 then
+            return false, 'INVALID_AMOUNT'
+        end
+        return true
+    end,
+    function(ctx)
+        if ctx.amount > TRANSFER_MAX_AMOUNT then
+            return false, 'AMOUNT_EXCEEDED'
+        end
+        return true
+    end,
+    function(ctx)
+        if getDistanceBetweenPlayers(ctx.source, ctx.target) > TRANSFER_MAX_DISTANCE then
+            return false, 'DISTANCE'
+        end
+        return true
+    end,
+    function(ctx)
+        if Security and Security.ValidateTransfer then
+            if not Security.ValidateTransfer(ctx.source, ctx.target, ctx.itemType, ctx.itemName, ctx.amount) then
+                return false, 'SECURITY_BLOCK'
+            end
+        end
+        return true
+    end
+}
+
 local function validateTransfer(source, target, itemType, itemName, amount)
     local xPlayer = ESX.GetPlayerFromId(source)
     local xTarget = ESX.GetPlayerFromId(target)
-
-    if not xPlayer or not xTarget then
-        return false, 'INVALID_PLAYER'
-    end
-
-    if source == target then
-        return false, 'SELF_TRANSFER'
-    end
 
     if type(amount) ~= 'number' then
         amount = tonumber(amount) or 0
     end
 
-    amount = ESX.Math.Round(amount)
-    if amount < 1 then
-        return false, 'INVALID_AMOUNT'
-    end
-
-    if amount > TRANSFER_MAX_AMOUNT then
-        return false, 'AMOUNT_EXCEEDED'
-    end
-
-    if getDistanceBetweenPlayers(source, target) > TRANSFER_MAX_DISTANCE then
-        return false, 'DISTANCE'
-    end
-
-    if Security and Security.ValidateTransfer then
-        if not Security.ValidateTransfer(source, target, itemType, itemName, amount) then
-            return false, 'SECURITY_BLOCK'
+    local ctx = {
+        source = source,
+        target = target,
+        itemType = itemType,
+        itemName = itemName,
+        amount = ESX.Math.Round(amount),
+        xPlayer = xPlayer,
+        xTarget = xTarget,
+    }
+    for i = 1, #VALIDATION_RULES do
+        local ok, reason = VALIDATION_RULES[i](ctx)
+        if not ok then
+            return false, reason
         end
     end
 
-    return true, amount, xPlayer, xTarget
+    return true, ctx.amount, xPlayer, xTarget
 end
 
 local function transferStandardItem(xPlayer, xTarget, itemName, amount)
