@@ -14,23 +14,20 @@
     <script type="module" crossorigin src="./assets/index-CmgWqK3k.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-lKaF8FZ1.css">
     <style>
-      /* Ultra performance mode: minimize UI animation work for huge inventories */
-      .transition,
-      .transition-all,
-      .itembox {
-        transition: none !important;
-        animation: none !important;
+      :root {
+        --inv-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --inv-ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
       }
 
-      /* Lightweight inventory open/close animation */
+      /* Inventory open/close animation */
       .fade-enter-active,
       .fade-leave-active {
-        transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+        transition: opacity 0.2s ease, transform 0.24s var(--inv-ease-out) !important;
       }
       .fade-enter-from,
       .fade-leave-to {
         opacity: 0 !important;
-        transform: translateY(10px) scale(0.985) !important;
+        transform: translateY(14px) scale(0.98) !important;
       }
       .fade-enter-to,
       .fade-leave-from {
@@ -38,23 +35,53 @@
         transform: translateY(0) scale(1) !important;
       }
 
-      /* Let browser skip offscreen rendering work in long item lists */
+      /* Smooth item interactions */
+      .itembox,
+      .Fastslot,
+      button,
+      [role="button"] {
+        transition:
+          transform 0.16s var(--inv-ease-smooth),
+          box-shadow 0.2s var(--inv-ease-smooth),
+          background-color 0.2s var(--inv-ease-smooth),
+          border-color 0.2s var(--inv-ease-smooth),
+          opacity 0.2s var(--inv-ease-smooth) !important;
+        will-change: transform;
+      }
+
+      .itembox:hover,
+      .Fastslot:hover,
+      button:hover,
+      [role="button"]:hover {
+        transform: translateY(-1px) scale(1.01);
+      }
+
+      .itembox:active,
+      .Fastslot:active,
+      button:active,
+      [role="button"]:active {
+        transform: translateY(0) scale(0.985);
+      }
+
+      /* Keep long-list rendering efficient while animating */
       .Myinventorylist,
       .Secondinventorylist {
         content-visibility: auto;
         contain-intrinsic-size: 800px 600px;
+        scroll-behavior: smooth;
       }
 
-      /* Reduce heavy paint effects (blur/filter/shadow) for max FPS */
-      .blur-sm,
-      .filter,
-      .grayscale {
-        filter: none !important;
-      }
-
-      * {
-        text-shadow: none !important;
-        box-shadow: none !important;
+      @media (prefers-reduced-motion: reduce) {
+        .fade-enter-active,
+        .fade-leave-active,
+        .itembox,
+        .Fastslot,
+        button,
+        [role="button"] {
+          transition: none !important;
+          animation: none !important;
+          transform: none !important;
+        }
       }
     </style>
   </head>
