@@ -206,42 +206,68 @@ function Client:GetmyInventory()
 		position = "inventory",
 	})
 
-	-- Process weapons
+	-- Process weapons (ใช้ loadout เป็นแหล่งหลัก + fallback ด้วย ped weapon)
+	local weaponLabels = {}
+	for i = 1, #self.infoweapon do
+		local weapon = self.infoweapon[i]
+		weaponLabels[weapon.name] = weapon.label or weapon.name
+	end
+
+	local addedWeapons = {}
+	local loadout = playerData.loadout or {}
+
+	local function addWeaponToInventory(weaponName, weaponLabel, ammo)
+		if not weaponName or weaponName == "WEAPON_UNARMED" or addedWeapons[weaponName] then
+			return
+		end
+
+		local weaponData = {
+			label = weaponLabel or weaponName,
+			count = ammo or 0,
+			limit = -1,
+			type = "item_weapon",
+			name = weaponName,
+			notUse = false,
+			notRemove = SettingItem.DisableRemove[weaponName],
+			notGive = SettingItem.DisableGive[weaponName],
+			rare = false,
+			position = "inventory",
+			skin = dataskin,
+			myskin = dataskin and currentskin and dataskin[currentskin]
+		}
+
+		addedWeapons[weaponName] = true
+		table.insert(items, weaponData)
+
+		local slot = fastWeaponsLookup[weaponName]
+		if slot then
+			local fastData = {}
+			for k, v in pairs(weaponData) do
+				fastData[k] = v
+			end
+			fastData.slot = slot
+			fastData.position = "fastslot"
+			table.insert(fastItems, fastData)
+		end
+	end
+
+	for i = 1, #loadout do
+		local loadoutWeapon = loadout[i]
+		local weaponName = loadoutWeapon.name
+		local ammo = loadoutWeapon.ammo
+		if ammo == nil then
+			ammo = GetAmmoInPedWeapon(playerPed, GetHashKey(weaponName))
+		end
+		addWeaponToInventory(weaponName, loadoutWeapon.label or weaponLabels[weaponName], ammo)
+	end
+
+	-- fallback: เผื่อ loadout ยัง sync ไม่ทัน แต่ ped มีอาวุธอยู่แล้ว
 	for i = 1, #self.infoweapon do
 		local weapon = self.infoweapon[i]
 		local weaponHash = GetHashKey(weapon.name)
-
-		if HasPedGotWeapon(playerPed, weaponHash, false) and weapon.name ~= "WEAPON_UNARMED" then
+		if HasPedGotWeapon(playerPed, weaponHash, false) then
 			local ammo = GetAmmoInPedWeapon(playerPed, weaponHash)
-			
-			local weaponData = {
-				label = weapon.label,
-				count = ammo,
-				limit = -1,
-				type = "item_weapon",
-				name = weapon.name,
-				notUse = false,
-				notRemove = SettingItem.DisableRemove[weapon.name],
-				notGive = SettingItem.DisableGive[weapon.name],
-				rare = false,
-				position = "inventory",
-				skin = dataskin,
-				myskin = dataskin and currentskin and dataskin[currentskin]
-			}
-			
-			table.insert(items, weaponData)
-			
-			-- Check if in fast slots
-			local slot = fastWeaponsLookup[weapon.name]
-			if slot then
-				local fastData = {}
-				for k, v in pairs(weaponData) do
-					fastData[k] = v
-				end
-				fastData.slot = slot
-				fastData.position = "fastslot"
-				table.insert(fastItems, fastData)
-			end
+			addWeaponToInventory(weapon.name, weapon.label, ammo)
 		end
 	end
 
