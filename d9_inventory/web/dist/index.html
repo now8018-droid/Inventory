@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + Vue + TS</title>
+
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css">
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+      <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script type="module" crossorigin src="./assets/index-9pQxR8Lm.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-lKaF8FZ1.css">
+    <link rel="stylesheet" href="./assets/custom-overrides.css">
+    <style>
+      :root {
+        --inv-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --inv-ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+
+      @keyframes inv-panel-in {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.94);
+          filter: blur(2px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes inv-panel-out {
+        from {
+          opacity: 1;
+          transform: translate(-50%, -50%) scale(1);
+          filter: blur(0);
+        }
+        to {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.97);
+          filter: blur(1px);
+        }
+      }
+
+      @keyframes inv-item-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* Inventory open/close animation */
+      .fade-enter-active,
+      .fade-leave-active {
+        transition: opacity 0.2s ease, transform 0.24s var(--inv-ease-out) !important;
+      }
+      .fade-enter-active {
+        animation: inv-panel-in 0.24s var(--inv-ease-out) both;
+      }
+      .fade-leave-active {
+        animation: inv-panel-out 0.18s ease both;
+      }
+      .fade-enter-from,
+      .fade-leave-to {
+        opacity: 0 !important;
+        transform: translate(-50%, -50%) scale(0.95) !important;
+      }
+      .fade-enter-to,
+      .fade-leave-from {
+        opacity: 1 !important;
+        transform: translate(-50%, -50%) scale(1) !important;
+      }
+
+      /* Smooth item interactions */
+      .itembox,
+      .Fastslot,
+      button,
+      [role="button"] {
+        transition:
+          transform 0.16s var(--inv-ease-smooth),
+          box-shadow 0.2s var(--inv-ease-smooth),
+          background-color 0.2s var(--inv-ease-smooth),
+          border-color 0.2s var(--inv-ease-smooth),
+          opacity 0.2s var(--inv-ease-smooth) !important;
+        will-change: transform;
+      }
+      .Myinventorylist .itembox,
+      .Secondinventorylist .itembox {
+        animation: inv-item-in 0.18s var(--inv-ease-out) both;
+      }
+
+      .itembox:hover,
+      .Fastslot:hover,
+      button:hover,
+      [role="button"]:hover {
+        transform: translateY(-1px) scale(1.01);
+      }
+
+      .itembox:active,
+      .Fastslot:active,
+      button:active,
+      [role="button"]:active {
+        transform: translateY(0) scale(0.985);
+      }
+
+      /* Keep long-list rendering efficient while animating */
+      .Myinventorylist,
+      .Secondinventorylist {
+        content-visibility: auto;
+        contain-intrinsic-size: 800px 600px;
+        scroll-behavior: smooth;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .fade-enter-active,
+        .fade-leave-active,
+        .itembox,
+        .Fastslot,
+        button,
+        [role="button"] {
+          transition: none !important;
+          animation: none !important;
+          transform: none !important;
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

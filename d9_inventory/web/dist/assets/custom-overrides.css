@@ -1,0 +1,91 @@
+/*
+  Inventory NUI custom CSS overrides
+  - Edit variables below to tune UI without touching minified bundles.
+  - Loaded AFTER index-lKaF8FZ1.css
+*/
+:root {
+  --inv-fastslot-size: calc(98 * var(--px));
+  --inv-fastslot-gap: calc(10 * var(--px));
+  --inv-fastslot-col-width: calc(98 * var(--px));
+
+  --inv-topbar-height: calc(36 * var(--px));
+  --inv-panel-height: calc(800 * var(--px));
+  --inv-panel-radius: calc(16 * var(--px));
+  --inv-slot-radius: calc(10 * var(--px));
+
+  /* data-v-5abd30f8 (Topbar) */
+  --inv-topbar-icon-size: calc(34 * var(--px));
+  --inv-topbar-icon-radius: calc(8 * var(--px));
+  --inv-topbar-title-size: calc(28 * var(--px));
+  --inv-topbar-group-gap: calc(6 * var(--px));
+  --inv-topbar-cat-padding-x: calc(8 * var(--px));
+  --inv-topbar-cat-font-size: calc(10 * var(--px));
+  --inv-topbar-search-width: calc(170 * var(--px));
+  --inv-topbar-search-height: calc(36 * var(--px));
+  --inv-topbar-mail-size: calc(36 * var(--px));
+}
+
+/* Main panel */
+.inventory-root .pv\:h-\[800px\] { height: var(--inv-panel-height) !important; }
+.inventory-root .pv\:rounded-\[16px\] { border-radius: var(--inv-panel-radius) !important; }
+
+/* Topbar */
+[data-v-5abd30f8].pv\:w-full.pv\:h-\[36px\] {
+  height: var(--inv-topbar-height) !important;
+  gap: var(--inv-topbar-group-gap) !important;
+}
+
+/* left icon button */
+[data-v-5abd30f8] .btn.pv\:size-\[34px\] {
+  width: var(--inv-topbar-icon-size) !important;
+  height: var(--inv-topbar-icon-size) !important;
+  border-radius: var(--inv-topbar-icon-radius) !important;
+}
+
+/* title text */
+[data-v-5abd30f8] .text-white.pv\:text-\[px\] {
+  font-size: var(--inv-topbar-title-size) !important;
+}
+
+/* category button */
+[data-v-5abd30f8] .pv\:text-\[10px\] {
+  font-size: var(--inv-topbar-cat-font-size) !important;
+}
+[data-v-5abd30f8] .pv\:px-\[8px\] {
+  padding-left: var(--inv-topbar-cat-padding-x) !important;
+  padding-right: var(--inv-topbar-cat-padding-x) !important;
+}
+
+/* search input */
+[data-v-5abd30f8] .pv\:w-\[170px\] {
+  width: var(--inv-topbar-search-width) !important;
+}
+[data-v-5abd30f8] .pv\:h-full.bg-\[\#070809\]\/5.pv\:rounded-\[10px\] {
+  height: var(--inv-topbar-search-height) !important;
+}
+
+/* mailbox button */
+[data-v-5abd30f8] .pv\:size-\[36px\] {
+  width: var(--inv-topbar-mail-size) !important;
+  height: var(--inv-topbar-mail-size) !important;
+}
+
+/* Fastslot column container */
+[data-v-41036f3e].pv\:w-\[98px\] {
+  width: var(--inv-fastslot-col-width) !important;
+  min-width: var(--inv-fastslot-col-width) !important;
+  max-width: var(--inv-fastslot-col-width) !important;
+}
+
+/* Fastslot tile */
+.Fastslot[data-v-41036f3e] {
+  width: var(--inv-fastslot-size) !important;
+  height: var(--inv-fastslot-size) !important;
+  flex: 0 0 var(--inv-fastslot-size) !important;
+  border-radius: var(--inv-slot-radius) !important;
+}
+
+/* Vertical spacing between fastslots */
+[data-v-41036f3e].pv\:gap-\[10px\] {
+  gap: var(--inv-fastslot-gap) !important;
+}
