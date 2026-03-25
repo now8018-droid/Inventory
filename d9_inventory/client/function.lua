@@ -126,7 +126,7 @@ function model:OpenInventiry()
 		local now = GetGameTimer()
 		if now - LAST_SKIP_NOTIFY_AT > 10000 then
 			LAST_SKIP_NOTIFY_AT = now
-			ESX.ShowNotification(("~y~Performance mode: showing first %s items (%s hidden)"):format(renderLimit, skipped))
+			ESX.ShowNotification(("~y~Performance mode: showing %s items (%s hidden, fastslot items prioritized)"):format(renderLimit, skipped))
 		end
 	end
 	if ENABLE_INVENTORY_SCREENBLUR then

@@ -310,39 +310,67 @@ function Client:GetmyInventory()
 	local standardItemCount = 0
 	local skippedStandardItems = 0
 	if inventory then
+		local standardEntries = {}
 		for _, item in pairs(inventory) do
 			if item and item.count > 0 then
-				if standardItemCount >= ULTRA_MAX_STANDARD_ITEMS then
-					skippedStandardItems = skippedStandardItems + 1
-					goto continue_inventory_item
+				standardEntries[#standardEntries + 1] = item
+			end
+		end
+
+		-- deterministic priority:
+		-- 1) fastslot-bound items first
+		-- 2) higher count first
+		-- 3) label/name ascending for stable order
+		table.sort(standardEntries, function(a, b)
+			local aFast = fastWeaponsLookup[a.name] ~= nil
+			local bFast = fastWeaponsLookup[b.name] ~= nil
+			if aFast ~= bFast then
+				return aFast
+			end
+
+			local aCount = a.count or 0
+			local bCount = b.count or 0
+			if aCount ~= bCount then
+				return aCount > bCount
+			end
+
+			local aLabel = tostring(a.label or a.name or "")
+			local bLabel = tostring(b.label or b.name or "")
+			return aLabel < bLabel
+		end)
+
+		for i = 1, #standardEntries do
+			local item = standardEntries[i]
+			if standardItemCount >= ULTRA_MAX_STANDARD_ITEMS then
+				skippedStandardItems = skippedStandardItems + 1
+				goto continue_inventory_item
+			end
+			standardItemCount = standardItemCount + 1
+			local itemData = {
+				label = item.label,
+				count = item.count,
+				limit = item.limit,
+				type = "item_standard",
+				name = item.name,
+				notUse = SettingItem.DisableUse[item.name],
+				notGive = SettingItem.DisableGive[item.name],
+				notRemove = SettingItem.DisableRemove[item.name],
+				rare = item.rare,
+				position = "inventory",
+			}
+
+			table.insert(items, itemData)
+
+			-- Check if in fast slots
+			local slot = fastWeaponsLookup[item.name]
+			if slot then
+				local fastData = {}
+				for k, v in pairs(itemData) do
+					fastData[k] = v
 				end
-				standardItemCount = standardItemCount + 1
-				local itemData = {
-					label = item.label,
-					count = item.count,
-					limit = item.limit,
-					type = "item_standard",
-					name = item.name,
-					notUse = SettingItem.DisableUse[item.name],
-					notGive = SettingItem.DisableGive[item.name],
-					notRemove = SettingItem.DisableRemove[item.name],
-					rare = item.rare,
-					position = "inventory",
-				}
-				
-				table.insert(items, itemData)
-				
-				-- Check if in fast slots
-				local slot = fastWeaponsLookup[item.name]
-				if slot then
-					local fastData = {}
-					for k, v in pairs(itemData) do
-						fastData[k] = v
-					end
-					fastData.slot = slot
-					fastData.position = "fastslot"
-					table.insert(fastItems, fastData)
-				end
+				fastData.slot = slot
+				fastData.position = "fastslot"
+				table.insert(fastItems, fastData)
 			end
 			::continue_inventory_item::
 		end
