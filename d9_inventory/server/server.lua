@@ -269,13 +269,18 @@ local function transferVehicleKey(xPlayer, xTarget, plate, isWelfare)
     end
 
     if GiveVehicleKeyToPlayer then
-        GiveVehicleKeyToPlayer(xPlayer.source, xTarget.source, plate)
-        logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
+        GiveVehicleKeyToPlayer(xPlayer.source, xTarget.source, plate, function(success, reason)
+            if success then
+                logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
+            else
+                logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, ("FAILED:%s"):format(reason or "UNKNOWN"))
+            end
+        end)
         return
     end
 
-    TriggerEvent('d9_inventory:giveVehicleKey', xTarget.source, plate)
-    logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "SUCCESS")
+    notifyPlayer(xPlayer, MSG.GIVE_FAIL)
+    logTransfer('item_key', xPlayer.source, xTarget.source, plate, 1, "FAILED:NO_KEY_HANDLER")
 end
 
 TRANSFER_POLICY = {

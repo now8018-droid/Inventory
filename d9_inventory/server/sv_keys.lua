@@ -33,13 +33,26 @@ function GetOwnedVehiclesForPlayer(source, cb)
     end)
 end
 
+local function done(callback, success, reason)
+    if callback then
+        callback(success, reason)
+    end
+end
+
 -- ให้กุญแจรถ
-function GiveVehicleKeyToPlayer(src, target, plate)
+function GiveVehicleKeyToPlayer(src, target, plate, callback)
     local xPlayer = ESX.GetPlayerFromId(src)
     local xTarget = ESX.GetPlayerFromId(target)
 
     if not xPlayer or not xTarget then
-        return false
+        done(callback, false, "INVALID_PLAYER")
+        return
+    end
+
+    if type(plate) ~= "string" or plate == "" then
+        xPlayer.showNotification('~r~ทะเบียนรถไม่ถูกต้อง')
+        done(callback, false, "INVALID_PLATE")
+        return
     end
     
     -- ตรวจสอบว่าเป็นเจ้าของรถจริง
@@ -56,13 +69,17 @@ function GiveVehicleKeyToPlayer(src, target, plate)
                 if rowsChanged > 0 then
                     xPlayer.showNotification('~g~ให้กุญแจรถหมายเลข ' .. plate .. ' สำเร็จ')
                     xTarget.showNotification('~g~ได้รับกุญแจรถหมายเลข ' .. plate .. ' จาก ' .. GetPlayerName(src))
+                    done(callback, true, "SUCCESS")
+                else
+                    xPlayer.showNotification('~r~ไม่สามารถให้กุญแจรถได้')
+                    done(callback, false, "INSERT_FAILED")
                 end
             end)
         else
             xPlayer.showNotification('~r~คุณไม่ใช่เจ้าของรถคันนี้')
+            done(callback, false, "NOT_OWNER")
         end
     end)
-    return true
 end
 
 RegisterNetEvent('d9_inventory:giveVehicleKey')
