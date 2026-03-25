@@ -22,12 +22,12 @@
       @keyframes inv-panel-in {
         from {
           opacity: 0;
-          transform: translateY(16px) scale(0.975);
+          transform: translate(-50%, -50%) scale(0.94);
           filter: blur(2px);
         }
         to {
           opacity: 1;
-          transform: translateY(0) scale(1);
+          transform: translate(-50%, -50%) scale(1);
           filter: blur(0);
         }
       }
@@ -35,12 +35,12 @@
       @keyframes inv-panel-out {
         from {
           opacity: 1;
-          transform: translateY(0) scale(1);
+          transform: translate(-50%, -50%) scale(1);
           filter: blur(0);
         }
         to {
           opacity: 0;
-          transform: translateY(10px) scale(0.985);
+          transform: translate(-50%, -50%) scale(0.97);
           filter: blur(1px);
         }
       }
@@ -70,12 +70,12 @@
       .fade-enter-from,
       .fade-leave-to {
         opacity: 0 !important;
-        transform: translateY(14px) scale(0.98) !important;
+        transform: translate(-50%, -50%) scale(0.95) !important;
       }
       .fade-enter-to,
       .fade-leave-from {
         opacity: 1 !important;
-        transform: translateY(0) scale(1) !important;
+        transform: translate(-50%, -50%) scale(1) !important;
       }
 
       /* Smooth item interactions */
@@ -131,33 +131,9 @@
         }
       }
 
-      /* Force animation hook from NUI openInventory event */
-      #app.inv-open-animate > * {
-        animation: inv-panel-in 0.26s var(--inv-ease-out) both !important;
-      }
     </style>
   </head>
   <body>
     <div id="app"></div>
-    <script>
-      (() => {
-        const app = document.getElementById("app");
-        if (!app) return;
-
-        window.addEventListener("message", (event) => {
-          const payload = event && event.data;
-          if (!payload || payload.event !== "openInventory") return;
-
-          app.classList.remove("inv-open-animate");
-          // force reflow so animation retriggers every open
-          void app.offsetWidth;
-          app.classList.add("inv-open-animate");
-
-          setTimeout(() => {
-            app.classList.remove("inv-open-animate");
-          }, 320);
-        });
-      })();
-    </script>
   </body>
 </html>
